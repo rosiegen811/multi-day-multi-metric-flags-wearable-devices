@@ -1,5 +1,64 @@
 # multi-day-multi-metric-flags-wearable-devices
 
+## Getting the data
+
+The pipeline is built and evaluated on the PhysioNet dataset **"Wearable Physiological Signals under Acute Stress and Exercise Conditions"** (Empatica E4 wristband), covering 36 stress, 30 aerobic and 31 anaerobic participants, described by Hongn et al. (2025). The session recordings are gitignored, so each user downloads the raw data themselves.
+
+**Where it lives.** The canonical source is PhysioNet, DOI [10.13026/he0v-tf17](https://doi.org/10.13026/he0v-tf17); the dataset is also described in a [Nature *Scientific Data* paper](https://www.nature.com/articles/s41597-025-04845-9). It is released under the **ODC-By** license, which requires attribution.
+
+**Downloading.** Open the dataset's PhysioNet project page and use either option:
+
+- **ZIP:** click the "Download the ZIP file" button in the project's Files section.
+- **Command line (`wget`):** follow the pattern below, but copy the EXACT command — including the real `<project-slug>` and `<version>` — from the "Files" section of the dataset's PhysioNet page. Do not trust a guessed slug.
+
+  ```bash
+  wget -r -N -c -np https://physionet.org/files/<project-slug>/<version>/
+  ```
+
+**Where to put it.** After downloading, place the session recordings so the loader and `scripts/demo.py` can find them:
+
+```
+data/sessions/Wearable_Dataset_sessions/Wearable_Dataset/<SESSION>/<participant>/
+```
+
+where `<SESSION>` is one of `STRESS`, `AEROBIC`, or `ANAEROBIC` and `<participant>` is an id like `S07` or `f13` (split recordings use `_a`/`_b` suffixes, e.g. `f14_a`, `f14_b`). The reference files — `data_constraints.txt`, `Data_Dictionary.csv`, `Stress_Level_v1.csv`, `Stress_Level_v2.csv`, `subject-info.csv` — already live in `data/external/`.
+
+**Citation.** PhysioNet DOI 10.13026/he0v-tf17; Hongn et al., *Scientific Data* (2025); ODC-By license (attribution required).
+
+*Content paraphrased for compliance; verify the exact download command on the PhysioNet project page.*
+
+## Quickstart
+
+**Install** (Python 3.11+):
+
+```bash
+pip install -e .
+```
+
+**Module layout** (one pipeline step per module):
+
+- `data/` — load the Empatica E4 CSVs, apply the dataset's cleaning rules, window the signals, and define the shared per-window schema.
+- `flag/` — rest baseline, per-signal z-scores and combined score, persistence gate and severity tiers, the movement check, and plain-language explanations.
+- `eval/` — phase labels and the self-report join, detection metrics, leave-one-subject-out calibration, and the end-to-end evaluation harness.
+- `app/` — the per-participant timeline view (signals, combined score, tier bands, phase shading, flag explanations).
+- `export/` — stretch add-on: FHIR / CMS care-update export of a Tier 2–3 flag.
+
+**Run the demo:**
+
+```bash
+python scripts/demo.py              # full pipeline on the real PhysioNet data
+python scripts/demo.py --synthetic  # deterministic synthetic cohort (no data needed)
+```
+
+The demo loads a small hand-picked cohort, builds the combined per-window table, runs the LOSO evaluation, and renders a strong-responder "hero" timeline plus a calm contrast. It writes these artifacts to `output/`:
+
+- `timeline_<hero>.png`, `timeline_<calm>.png` — per-participant timelines.
+- `false_alarms_vs_delay.png` — headline figure 1 (false alarms per rest hour vs detection delay).
+- `tier_vs_self_report.png` — headline figure 2 (assigned tier vs self-reported stress).
+- `metrics_by_method_cohort.csv` — the per-method, per-cohort numbers behind the figures.
+
+The FHIR / CMS care-update export under `export/` is a stretch add-on, not part of the core run.
+
 ## Pitch
 
 We flag sustained, multi-metric physiological change from wrist-worn wearable signals, rate it by severity, and explain each flag in plain terms. We build and test the method on the PhysioNet wearable dataset, where we know exactly when each stressor starts and how hard it is.
