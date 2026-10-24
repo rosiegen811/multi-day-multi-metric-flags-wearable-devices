@@ -5,6 +5,10 @@
 data/raw/*
 !data/raw/.gitkeep
 
+# Session recordings: never commit
+data/sessions/*
+!data/sessions/.gitkeep
+
 # Generated data: rebuild from simulate.py instead
 data/*.csv
 
