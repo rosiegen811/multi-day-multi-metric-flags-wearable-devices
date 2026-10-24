@@ -74,6 +74,12 @@ __all__ = [
     "mark_rmssd_unavailable",
     "restrict_to_stress",
     "mark_demographics_unavailable",
+    "reject_artifacts",
+    "PhysiologicalBounds",
+    "HR_BOUNDS_BPM",
+    "TEMP_BOUNDS_C",
+    "IBI_BOUNDS_S",
+    "DEFAULT_BOUNDS",
     "clean",
 ]
 
@@ -98,6 +104,60 @@ _F07_EXCLUDED: tuple[tuple[str, str], ...] = (
 
 # Cohort_V2 participants f14..f18 are restricted to the stress session (AC 2.7).
 _STRESS_ONLY_PIDS: frozenset[str] = frozenset(f"f{n:02d}" for n in range(14, 19))
+
+
+# ---------------------------------------------------------------------------
+# Physiological-plausibility (artifact rejection) bounds
+# ---------------------------------------------------------------------------
+#
+# Empatica E4 recordings begin with a sensor-settling transient: while the PPG
+# optics and the skin-temperature thermistor equilibrate against the wrist, the
+# first seconds carry physically impossible values (skin temperature reading
+# ~208.95 / 221 C, heart rate spiking to ~160+ bpm, sub-physiological inter-beat
+# intervals). Left in, those out-of-range samples produce combined scores in the
+# hundreds that drag LOSO threshold calibration so high that genuine stress tasks
+# never flag (sensitivity 0, all-NaN detection delay, empty false_alarms_vs_delay
+# figure). The artifact filter replaces each out-of-range *sample value* with NaN
+# in place (preserving sample indices / timing) so it is excluded from baseline
+# estimation and scoring; downstream already treats NaN as "unavailable"
+# (AC 4.5 window cell, AC 6.7 scorer drop).
+#
+# Bounds are keep-ranges (closed intervals): a value strictly outside the range
+# is rejected (set to NaN). Defaults target a wrist-worn Empatica E4 on healthy
+# adults and are intentionally generous guard-rails, not tight clinical limits.
+# They are exposed as named constants so they can be tuned without touching the
+# filter logic.
+
+# HR (bpm): resting-to-max-effort band for healthy adults, generously widened.
+HR_BOUNDS_BPM: tuple[float, float] = (25.0, 220.0)
+# Skin temperature (deg C): wrist skin realistically ~25-39 C; 20-42 is a wide
+# guard that still rejects the famous 208.95 / 221 C settling artifacts.
+TEMP_BOUNDS_C: tuple[float, float] = (20.0, 42.0)
+# Inter-beat interval (s): 0.3 s..2.0 s == 30..200 bpm instantaneous. These feed
+# RMSSD, so sub-/supra-physiological intervals are rejected before RMSSD is
+# derived.
+IBI_BOUNDS_S: tuple[float, float] = (0.3, 2.0)
+
+
+@dataclass(frozen=True)
+class PhysiologicalBounds:
+    """Keep-ranges for the physiological-plausibility artifact filter.
+
+    Each field is a ``(low, high)`` closed interval of values to *keep*; a sample
+    strictly below ``low`` or above ``high`` is rejected (replaced with NaN) by
+    :func:`reject_artifacts`. ACC is deliberately not range-filtered (its
+    magnitude is bounded and only drives the movement check), so it has no bound
+    here. Instantiate with custom tuples to tune the filter.
+    """
+
+    hr_bpm: tuple[float, float] = HR_BOUNDS_BPM
+    temp_c: tuple[float, float] = TEMP_BOUNDS_C
+    ibi_s: tuple[float, float] = IBI_BOUNDS_S
+
+
+# The default bounds applied by :func:`clean` and by :func:`reject_artifacts`
+# when no explicit bounds are supplied.
+DEFAULT_BOUNDS = PhysiologicalBounds()
 
 
 # ---------------------------------------------------------------------------
@@ -483,6 +543,73 @@ def mark_demographics_unavailable(signals: ParticipantSignals) -> ParticipantSig
 
 
 # ---------------------------------------------------------------------------
+# Artifact rejection (physiological-plausibility filter)
+# ---------------------------------------------------------------------------
+
+
+def _reject_out_of_range(values: np.ndarray, low: float, high: float) -> np.ndarray:
+    """Return a float copy of ``values`` with out-of-range samples set to NaN.
+
+    A sample strictly below ``low`` or strictly above ``high`` is replaced with
+    NaN; in-range samples (and samples that are already NaN) are kept as-is.
+    Sample count and order are preserved so downstream timing (sample ``i`` at
+    ``start_utc + i / sample_rate_hz``) is unchanged. The array is cast to
+    ``float`` first so an integer-dtype input can hold NaN.
+    """
+    arr = np.asarray(values, dtype=float).copy()
+    if arr.size == 0:
+        return arr
+    # Comparisons against NaN are False, so existing NaNs are left untouched.
+    out_of_range = (arr < low) | (arr > high)
+    arr[out_of_range] = np.nan
+    return arr
+
+
+def reject_artifacts(
+    signals: ParticipantSignals, bounds: PhysiologicalBounds = DEFAULT_BOUNDS
+) -> ParticipantSignals:
+    """Replace physiologically implausible samples with NaN (artifact rejection).
+
+    Guards against the Empatica E4 sensor-settling / artifact transient (see the
+    "Physiological-plausibility (artifact rejection) bounds" section above): HR
+    samples outside ``bounds.hr_bpm`` bpm, skin-temperature (TEMP) samples outside
+    ``bounds.temp_c`` deg C, and IBI inter-beat intervals outside ``bounds.ibi_s``
+    seconds are replaced *in place* with NaN. Out-of-range values no longer
+    contribute to baseline estimation or window scoring; a window whose trailing
+    interval becomes all-NaN for a signal yields NaN for that cell (AC 4.5) and
+    the scorer drops it (AC 6.7), which is the intended effect.
+
+    Only sample *values* are changed — no rows are dropped and no timing is
+    shifted, so sample indices stay aligned with ``start_utc + i / rate``. HR and
+    TEMP value arrays are cast to ``float`` so they can hold NaN even if the
+    loader produced an integer array. ACC is intentionally left untouched
+    (bounded magnitude, movement-only use). The input ``signals`` is not mutated;
+    a cleaned copy is returned.
+    """
+    result = _copy_signals(signals)
+
+    if isinstance(result.hr, SignalSeries):
+        low, high = bounds.hr_bpm
+        result.hr = replace(
+            result.hr, values=_reject_out_of_range(result.hr.values, low, high)
+        )
+
+    if isinstance(result.temp, SignalSeries):
+        low, high = bounds.temp_c
+        result.temp = replace(
+            result.temp, values=_reject_out_of_range(result.temp.values, low, high)
+        )
+
+    if isinstance(result.ibi, IBISeries):
+        low, high = bounds.ibi_s
+        result.ibi = replace(
+            result.ibi, offsets_s=_reject_out_of_range(result.ibi.offsets_s, low, high)
+        )
+
+    return result
+
+
+# ---------------------------------------------------------------------------
 # Dispatch table + driver
 # ---------------------------------------------------------------------------
 
@@ -496,6 +623,8 @@ def clean(
     signals: ParticipantSignals,
     constraints: Constraints,
     segment_b: ParticipantSignals | None = None,
+    apply_artifact_rejection: bool = True,
+    bounds: PhysiologicalBounds = DEFAULT_BOUNDS,
 ) -> ParticipantSignals | None:
     """Apply every documented cleaning rule for one participant/session.
 
@@ -510,6 +639,22 @@ def clean(
     5. AC 2.6 - empty IBI (S01 anaerobic): keep HR, mark RMSSD unavailable.
     6. AC 2.5 - ended early (S03/S07/S06): keep completed phases.
     7. AC 2.8 - missing demographics: retain, mark demographics unavailable.
+    8. Artifact rejection - replace physiologically implausible HR/TEMP samples
+       and IBI intervals with NaN (:func:`reject_artifacts`).
+
+    Artifact rejection runs **last**, after every documented structural rule, and
+    just before returning. Ordering it last is deliberate: the structural rules
+    (truncation, join, dock-on/empty-IBI clearing) decide *which* samples exist
+    and are still eligible for analysis, and the plausibility filter then screens
+    the surviving sample *values* — there is no point range-checking samples that
+    a structural rule has already dropped or cleared. It is on by default
+    (``apply_artifact_rejection=True``) so every participant that goes through
+    ``clean`` is guarded against the Empatica E4 sensor-settling transient that
+    otherwise inflates LOSO threshold calibration; pass ``False`` to skip it or a
+    custom :class:`PhysiologicalBounds` via ``bounds`` to tune the keep-ranges.
+    The filter only NaNs out-of-range sample values (no row drops, no timing
+    shift), so downstream windowing is unaffected except that all-NaN trailing
+    intervals yield NaN cells (AC 4.5), which the scorer drops (AC 6.7).
 
     ``segment_b`` is the optional companion recording for a split (``_a``/``_b``)
     case; it is required to actually join (the split flag without a companion leaves
@@ -556,6 +701,12 @@ def clean(
     if pid in _MISSING_DEMOGRAPHICS:
         current = mark_demographics_unavailable(current)
 
+    # Artifact rejection: NaN out physiologically implausible HR/TEMP samples and
+    # IBI intervals (Empatica E4 sensor-settling guard). Runs last so it screens
+    # only the samples the structural rules above left eligible for analysis.
+    if apply_artifact_rejection:
+        current = reject_artifacts(current, bounds)
+
     return current
 
 
@@ -571,4 +722,5 @@ _RULE_DISPATCH: dict[str, Callable[..., object]] = {
     "empty_ibi": mark_rmssd_unavailable,
     "restrict_to_stress": restrict_to_stress,
     "missing_demographics": mark_demographics_unavailable,
+    "reject_artifacts": reject_artifacts,
 }

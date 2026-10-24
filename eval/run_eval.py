@@ -110,7 +110,12 @@ from data.windows import (
     protocol_key,
     window,
 )
-from flag.baseline import SCORED_SIGNALS, person_baseline, shrink_to_cohort
+from flag.baseline import (
+    SCORED_SIGNALS,
+    person_baseline,
+    pooled_spreads,
+    shrink_to_cohort,
+)
 from flag.context import apply_movement, movement_label
 from flag.score import (
     METHOD_DIRECTIONAL_SUM,
@@ -355,7 +360,16 @@ def build_combined_table(
                 for signal in pid_baselines
             }
 
-    shrunk = shrink_to_cohort(raw_baselines, cohort, counts=counts)
+    # Robust cohort pooled shrinkage target: the per-person baseline MAD is the
+    # warm-up-excluded opening-rest tail (AC 5.1), which is degenerately tiny
+    # cohort-wide for a near-constant signal like skin temperature. Shrink toward
+    # a pooled estimate computed from the *full* baseline-phase windows instead
+    # (flag.baseline.pooled_spreads), so a degenerate per-person tail is pulled to
+    # a meaningful resting spread rather than to an equally-degenerate tail pool.
+    robust_pooled = pooled_spreads(table, cohort)
+    shrunk = shrink_to_cohort(
+        raw_baselines, cohort, counts=counts, pooled=robust_pooled
+    )
 
     return BuiltTable(
         table=table,
