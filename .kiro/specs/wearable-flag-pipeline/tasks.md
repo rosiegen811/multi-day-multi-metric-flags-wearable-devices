@@ -216,12 +216,12 @@ Implementation language is **Python 3.11+** (as specified in the design). Proper
 - [x] 11. Checkpoint - scoring and flagging layer
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 12. Implement evaluation labels and metrics in `eval/labels.py` and `eval/metrics.py`
-  - [~] 12.1 Implement phase labels and the ground-truth join
+- [x] 12. Implement evaluation labels and metrics in `eval/labels.py` and `eval/metrics.py`
+  - [x] 12.1 Implement phase labels and the ground-truth join
     - `phase_labels` derives rest-vs-task labels from tags and joins per-phase self-reported stress
     - _Requirements: 10.1, 10.2, 10.3, 10.4_
 
-  - [~] 12.2 Implement detection metrics per cohort
+  - [x] 12.2 Implement detection metrics per cohort
     - `sensitivity` (long vs 30 s tasks), `false_alarms_per_rest_hour` (skip first 120 s post-task), `detection_delay`, `tier_agreement` (per-phase rank correlation), `movement_attribution`, and `evaluate(method)` reporting each metric separately for Cohort_V1 and Cohort_V2
     - _Requirements: 10.1, 10.2, 10.3, 10.4, 10.5, 10.6_
 
@@ -234,8 +234,8 @@ Implementation language is **Python 3.11+** (as specified in the design). Proper
     - Known flags+labels -> expected sensitivity split, false-alarm rate with 120 s tail excluded, delay, rank correlation, movement shares, per-cohort keys
     - _Requirements: 10.1, 10.2, 10.4, 10.5, 10.6_
 
-- [ ] 13. Implement the WHOOP_Rule baseline and method comparison in `eval/metrics.py`
-  - [~] 13.1 Implement the WHOOP_Rule and side-by-side comparison
+- [x] 13. Implement the WHOOP_Rule baseline and method comparison in `eval/metrics.py`
+  - [x] 13.1 Implement the WHOOP_Rule and side-by-side comparison
     - Implement the single-signal out-of-range `WHOOP_Rule` as an evaluation baseline and `compare_methods` computing the full metric set for WHOOP_Rule, directional-sum, and Mahalanobis side by side
     - _Requirements: 11.1, 11.2, 11.3, 11.4_
 
@@ -243,8 +243,8 @@ Implementation language is **Python 3.11+** (as specified in the design). Proper
     - Assert the full metric set is emitted per method and reported side by side
     - _Requirements: 11.1, 11.2, 11.3, 11.4_
 
-- [ ] 14. Implement the Calibrator in `eval/calibrate.py`
-  - [~] 14.1 Implement LOSO threshold calibration
+- [x] 14. Implement the Calibrator in `eval/calibrate.py`
+  - [x] 14.1 Implement LOSO threshold calibration
     - `calibrate_loso` tunes `tau1` from the rest false-alarm budget and `tau2`/`tau3` so tiers track self-reported stress and aerobic intensity stages, using leave-one-subject-out folds; assert output ordering `tau1 < tau2 < tau3`
     - _Requirements: 12.1, 12.2, 12.3, 12.4_
 
@@ -262,13 +262,13 @@ Implementation language is **Python 3.11+** (as specified in the design). Proper
     - Rest false-alarm <= budget; tier rises with aerobic intensity on a fixture
     - _Requirements: 12.2, 12.3_
 
-- [ ] 15. Implement evaluation orchestration in `eval/run_eval.py`
-  - [~] 15.1 Wire the LOSO evaluation harness and headline figures
+- [x] 15. Implement evaluation orchestration in `eval/run_eval.py`
+  - [x] 15.1 Wire the LOSO evaluation harness and headline figures
     - Build the Per_Window_Table and phase labels for every clean participant, run LOSO per method (calibrate on the rest, flag the held-out subject, accumulate metrics), aggregate per cohort, and write the headline figures (false alarms vs detection delay; tier vs self-reported stress) to `output/`
     - This integrates Data_Loader -> Cleaner -> Windower -> Baseline -> Scorer -> Flagger -> Movement -> Explainer -> Evaluator -> Calibrator end to end
     - _Requirements: 10.6, 11.4, 12.1_
 
-- [~] 16. Checkpoint - evaluation layer
+- [x] 16. Checkpoint - evaluation layer
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 17. Implement the Demo_App in `app/demo.py`

@@ -234,6 +234,16 @@
         "executionId": "c0427a7d-5ff4-4a59-9db5-b8fe40c8c964",
         "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
         "timestamp": 1792872351372
+      },
+      {
+        "executionId": "97306ed9-6b03-4484-b154-c197cbef2ee7",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792875334525
+      },
+      {
+        "executionId": "97306ed9-6b03-4484-b154-c197cbef2ee7",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792875581116
       }
     ],
     "12.2 Implement detection metrics per cohort": [
@@ -241,6 +251,16 @@
         "executionId": "c0427a7d-5ff4-4a59-9db5-b8fe40c8c964",
         "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
         "timestamp": 1792872351392
+      },
+      {
+        "executionId": "97306ed9-6b03-4484-b154-c197cbef2ee7",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792875583666
+      },
+      {
+        "executionId": "97306ed9-6b03-4484-b154-c197cbef2ee7",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792875847355
       }
     ],
     "13.1 Implement the WHOOP_Rule and side-by-side comparison": [
@@ -248,6 +268,16 @@
         "executionId": "c0427a7d-5ff4-4a59-9db5-b8fe40c8c964",
         "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
         "timestamp": 1792872351413
+      },
+      {
+        "executionId": "97306ed9-6b03-4484-b154-c197cbef2ee7",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792875850057
+      },
+      {
+        "executionId": "97306ed9-6b03-4484-b154-c197cbef2ee7",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792876122046
       }
     ],
     "14.1 Implement LOSO threshold calibration": [
@@ -255,6 +285,16 @@
         "executionId": "c0427a7d-5ff4-4a59-9db5-b8fe40c8c964",
         "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
         "timestamp": 1792872351433
+      },
+      {
+        "executionId": "97306ed9-6b03-4484-b154-c197cbef2ee7",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792876124753
+      },
+      {
+        "executionId": "97306ed9-6b03-4484-b154-c197cbef2ee7",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792876695545
       }
     ],
     "15.1 Wire the LOSO evaluation harness and headline figures": [
@@ -262,6 +302,16 @@
         "executionId": "c0427a7d-5ff4-4a59-9db5-b8fe40c8c964",
         "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
         "timestamp": 1792872351457
+      },
+      {
+        "executionId": "97306ed9-6b03-4484-b154-c197cbef2ee7",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792876699341
+      },
+      {
+        "executionId": "97306ed9-6b03-4484-b154-c197cbef2ee7",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792877187474
       }
     ],
     "16. Checkpoint - evaluation layer": [
@@ -269,6 +319,11 @@
         "executionId": "c0427a7d-5ff4-4a59-9db5-b8fe40c8c964",
         "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
         "timestamp": 1792872351482
+      },
+      {
+        "executionId": "97306ed9-6b03-4484-b154-c197cbef2ee7",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792877218016
       }
     ],
     "17.1 Render the per-person timeline": [
@@ -353,6 +408,34 @@
         "executionId": "4a30602b-70f5-4591-8dec-6fc049f007aa",
         "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
         "timestamp": 1792875151780
+      }
+    ],
+    "12. Implement evaluation labels and metrics in `eval/labels.py` and `eval/metrics.py`": [
+      {
+        "executionId": "97306ed9-6b03-4484-b154-c197cbef2ee7",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792875847402
+      }
+    ],
+    "13. Implement the WHOOP_Rule baseline and method comparison in `eval/metrics.py`": [
+      {
+        "executionId": "97306ed9-6b03-4484-b154-c197cbef2ee7",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792876122080
+      }
+    ],
+    "14. Implement the Calibrator in `eval/calibrate.py`": [
+      {
+        "executionId": "97306ed9-6b03-4484-b154-c197cbef2ee7",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792876695571
+      }
+    ],
+    "15. Implement evaluation orchestration in `eval/run_eval.py`": [
+      {
+        "executionId": "97306ed9-6b03-4484-b154-c197cbef2ee7",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792877187507
       }
     ]
   }
