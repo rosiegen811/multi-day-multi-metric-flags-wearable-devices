@@ -331,6 +331,16 @@
         "executionId": "c0427a7d-5ff4-4a59-9db5-b8fe40c8c964",
         "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
         "timestamp": 1792872351501
+      },
+      {
+        "executionId": "21ee0fe1-b317-47a2-bd21-18924f4c8c64",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792877281672
+      },
+      {
+        "executionId": "21ee0fe1-b317-47a2-bd21-18924f4c8c64",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792877574620
       }
     ],
     "18.1 Implement FHIR and CMS care-update export for Tier 2/3 flags": [
@@ -338,6 +348,16 @@
         "executionId": "c0427a7d-5ff4-4a59-9db5-b8fe40c8c964",
         "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
         "timestamp": 1792872351523
+      },
+      {
+        "executionId": "21ee0fe1-b317-47a2-bd21-18924f4c8c64",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792877578203
+      },
+      {
+        "executionId": "21ee0fe1-b317-47a2-bd21-18924f4c8c64",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792877823001
       }
     ],
     "19. Final checkpoint - full pipeline": [
@@ -345,6 +365,11 @@
         "executionId": "c0427a7d-5ff4-4a59-9db5-b8fe40c8c964",
         "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
         "timestamp": 1792872351542
+      },
+      {
+        "executionId": "21ee0fe1-b317-47a2-bd21-18924f4c8c64",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792877916308
       }
     ],
     "1. Set up project scaffolding, dependencies, and shared schema": [
@@ -436,6 +461,20 @@
         "executionId": "97306ed9-6b03-4484-b154-c197cbef2ee7",
         "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
         "timestamp": 1792877187507
+      }
+    ],
+    "17. Implement the Demo_App in `app/demo.py`": [
+      {
+        "executionId": "21ee0fe1-b317-47a2-bd21-18924f4c8c64",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792877574654
+      }
+    ],
+    "18. (Stretch / optional) Implement standard-format export in `export/fhir.py` and `export/care_update.py`": [
+      {
+        "executionId": "21ee0fe1-b317-47a2-bd21-18924f4c8c64",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792877823035
       }
     ]
   }

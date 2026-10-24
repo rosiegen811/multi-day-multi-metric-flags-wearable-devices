@@ -271,8 +271,8 @@ Implementation language is **Python 3.11+** (as specified in the design). Proper
 - [x] 16. Checkpoint - evaluation layer
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 17. Implement the Demo_App in `app/demo.py`
-  - [~] 17.1 Render the per-person timeline
+- [x] 17. Implement the Demo_App in `app/demo.py`
+  - [x] 17.1 Render the per-person timeline
     - Render a selected participant's signals, Combined_Score, Severity_Tier bands, and phase shading on a shared timeline, and show the flag explanation at a flagged window
     - _Requirements: 13.1, 13.2_
 
@@ -280,8 +280,8 @@ Implementation language is **Python 3.11+** (as specified in the design). Proper
     - Render fixture; assert signals, score, tier bands, phase shading, and flag explanation are present
     - _Requirements: 13.1, 13.2_
 
-- [ ] 18. (Stretch / optional) Implement standard-format export in `export/fhir.py` and `export/care_update.py`
-  - [~] 18.1 Implement FHIR and CMS care-update export for Tier 2/3 flags
+- [x] 18. (Stretch / optional) Implement standard-format export in `export/fhir.py` and `export/care_update.py`
+  - [x] 18.1 Implement FHIR and CMS care-update export for Tier 2/3 flags
     - When export is enabled and a flag is Tier 2 or Tier 3: emit a FHIR `Bundle` with one `Observation` per metric plus one summary `Observation`; emit a CMS care-update populated with baseline and most-recent clinical measures and the explanation, leaving Assessment and Plan unpopulated
     - _Requirements: 14.1, 14.2, 14.3_
 
@@ -299,7 +299,7 @@ Implementation language is **Python 3.11+** (as specified in the design). Proper
     - Fixture flag -> measures and explanation populated
     - _Requirements: 14.2_
 
-- [~] 19. Final checkpoint - full pipeline
+- [x] 19. Final checkpoint - full pipeline
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Notes
