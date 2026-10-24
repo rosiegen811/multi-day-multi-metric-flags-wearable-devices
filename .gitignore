@@ -1,0 +1,15 @@
+# Secrets (WHOOP OAuth keys)
+.env
+
+# Real wearable data: never commit
+data/raw/*
+!data/raw/.gitkeep
+
+# Generated data: rebuild from simulate.py instead
+data/*.csv
+
+# Python and Jupyter clutter
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+*.egg-info/
