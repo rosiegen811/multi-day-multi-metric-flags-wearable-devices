@@ -1,0 +1,15 @@
+STRESS
+•	S02: Files downloaded from E4 Connect have duplicated signals. Duplicated raw values start in: ACC.csv: row 49,545; BVP.csv: row 99,091; EDA.csv and TEMP.csv: row 6,195. As IBI and HR files are obtained from the BVP signal through Empatica's algorithm, it is not evident where the duplicated data start.
+•	f07: The protection dock was never removed from the wristband, covering the PPG and TEMPERATURE sensors. Thus, only the ELECTRODERMAL ACTIVITY AND ACCELEROMETER DATA measurements are valid.
+•	f14: Bluetooth connection was lost during registration. The baseline is in file f14_a, and the rest of the protocol is in file f14_b.
+
+AEROBIC
+•	S03: Ended the protocol early, only reaching 90 rpm.
+•	S07: Ended the protocol early, only reaching 95 rpm.
+•	S11: Bluetooth connection was lost during registration. File S11_a includes data up to 105 rpm, and S11_b includes the last 110 rpm block.
+•	S12: Did not perform the aerobic protocol, so there are no data.
+
+ANAEROBIC
+•	S01: The IBI file downloaded from E4 Connect is empty.
+•	S06: Ended the protocol early (the last sprint is missing).
+•	S16: Bluetooth connection was lost during registration. File S16_a includes two sprints, and S16_b includes two more sprints.

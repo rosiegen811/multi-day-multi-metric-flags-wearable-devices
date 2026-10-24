@@ -1,0 +1,47 @@
+Info ,Gender,Age,Height (cm),Weight (kg),Does physical activity regularly?,Protocol,Stress Inducement,Aerobic Exercise,Anaerobic Exercise
+S01,m,21,192,84,Yes,V1,Yes,Yes,Yes****
+S02,m,20,185,95,No,V1,Yes****,Yes,Yes
+S03,m,20,175,62,Yes,V1,Yes,Yes***,Yes
+S04,m,21,174,70,Yes,V1,Yes,Yes,Yes
+S05,m,21,173,72,Yes,V1,Yes,Yes,Yes
+S06,m,21,172,70,Yes,V1,Yes,Yes,Yes***
+S07,m,19,184,88,Yes,V1,Yes,Yes***,Yes
+S08,m,20,174,67,Yes,V1,Yes,Yes,Yes
+S09,m,19,174,63,Yes,V1,Yes,Yes,Yes
+S10,m,21,180,80,Yes,V1,Yes,Yes,Yes
+S11,m,21,183,64,Yes,V1,Yes,Yes**,Yes
+S12,m,18,176,79,Yes,V1,Yes,-,Yes
+S13,m,21,175,65,Yes,V1,Yes,Yes,Yes
+S14,m,19,182,85,Yes,V1,Yes,Yes,Yes
+S15,m,21,176,77,Yes,V1,Yes,Yes,Yes
+S16,m,20,168,61,Yes,V1,Yes,Yes,Yes**
+S17,m,22,173,78,Yes,V1,Yes,Yes,Yes
+S18,m,21,183,80,Yes,V1,Yes,Yes,Yes
+f01,f,25,152,61,No,V2,Yes,Yes,Yes
+f02,f,29,164,80,No,V2,Yes,Yes,Yes
+f03,f,26,160,61,Yes,V2,Yes,Yes,Yes
+f04,f,29,168,56,No,V2,Yes,Yes,Yes
+f05,f,21,165,55,Yes,V2,Yes,Yes,Yes
+f06,f,21,169,58,No,V2,Yes,Yes,Yes
+f07,f,21,163,47,No,V2,Yes*,Yes,Yes
+f08,f,22,158,50,No,V2,Yes,Yes,Yes
+f09,f,21,170,56,Yes,V2,Yes,Yes,Yes
+f10,f,21,172,65,Yes,V2,Yes,Yes,Yes
+f11,f,31,170,84,No,V2,Yes,Yes,Yes
+f12,f,30,158,97,No,V2,Yes,Yes,Yes
+f13,f,29,154,56,No,V2,Yes,Yes,Yes
+f14,f,-,-,-,-,V2,Yes**,-,-
+f15,f,-,-,-,-,V2,Yes,-,-
+f16,f,-,-,-,-,V2,Yes,-,-
+f17,f,-,-,-,-,V2,Yes,-,-
+f18,m,-,-,-,-,V2,Yes,-,-
+,,,,,,,,,
+References:,,,,,,,,,
+m:male,,,,,,,,,
+f: female,,,,,,,,,
+V1: First version of the protocol,,,,,,,,,
+V2: Second version of the protocol,,,,,,,,,
+* Wrong wristband placement.,,,,,,,,,
+** Connection Loss ,,,,,,,,,
+*** Protocol was not fully completed,,,,,,,,,
+**** Files with Annotations,,,,,,,,,

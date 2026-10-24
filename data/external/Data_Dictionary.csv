@@ -1,0 +1,8 @@
+Code,Variable Name,Description,Sampling Frequency (Hz),Units
+EDA,Electrodermal Activity,Data from the electrodermal activity sensor,4,microsiemens (uS)
+TEMP,Skin Temperature,Data from temperature sensor ,4,Celsius (°C)
+BVP,Blood Volume Pulse,Data from photoplethysmograph,64,-
+HR,Heart Rate,Average heart rate extracted from the BVP signal,1,beats per minute (BPM)
+IBI,Inter Beat Interval,Time between individuals heart beats extracted from the BVP signal  ,-,-
+ACC,3-axis Accelerometer,Data from 3-axis accelerometer sensor (x;y;z),32,1/64g
+tags,Event mark times,Each mark corresponds to a physical button press on the device,-,-
