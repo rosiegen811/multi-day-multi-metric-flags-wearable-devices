@@ -97,8 +97,8 @@ Implementation language is **Python 3.11+** (as specified in the design). Proper
 - [x] 5. Checkpoint - data layer
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 6. Implement the Baseline_Estimator in `flag/baseline.py`
-  - [~] 6.1 Implement per-person baseline with warm-up exclusion and cohort shrinkage
+- [x] 6. Implement the Baseline_Estimator in `flag/baseline.py`
+  - [x] 6.1 Implement per-person baseline with warm-up exclusion and cohort shrinkage
     - `person_baseline` uses the opening rest segment excluding its first 60 s, summarizing each signal as median and scaled MAD (`1.4826 * MAD`) into `SignalBaseline`
     - `shrink_to_cohort` shrinks each per-person spread toward the cohort pooled estimate via empirical-Bayes; V1 exercise sessions without a rest baseline reuse the stress-session rest segment; guard zero-MAD with a small positive floor
     - _Requirements: 5.1, 5.2, 5.3, 5.4_
@@ -122,8 +122,8 @@ Implementation language is **Python 3.11+** (as specified in the design). Proper
     - Fixture asserting stress-session rest reuse for a V1 exercise session
     - _Requirements: 5.4_
 
-- [ ] 7. Implement the Scorer in `flag/score.py`
-  - [~] 7.1 Implement signed z-scores and combined scores
+- [x] 7. Implement the Scorer in `flag/score.py`
+  - [x] 7.1 Implement signed z-scores and combined scores
     - `signed_z` makes HR increase positive, RMSSD decrease positive, skin temperature signed by direction of deviation, magnitude = baseline-centered value / scaled MAD
     - `directional_sum` sums signed z-scores; `mahalanobis_score` uses a `sklearn.covariance.LedoitWolf` shrinkage covariance
     - `combined_score` dispatches by method and drops unavailable signals from the combination for that window, returning a finite value
@@ -149,8 +149,8 @@ Implementation language is **Python 3.11+** (as specified in the design). Proper
     - **Property 14: Combined score over available signals** — computed from available signals only, finite
     - **Validates: Requirements 6.7**
 
-- [ ] 8. Implement the Flagger tiers and hysteresis in `flag/tiers.py`
-  - [~] 8.1 Implement persistence gate, tier assignment, single-signal cap, and hysteresis
+- [x] 8. Implement the Flagger tiers and hysteresis in `flag/tiers.py`
+  - [x] 8.1 Implement persistence gate, tier assignment, single-signal cap, and hysteresis
     - `persistence_gate` passes iff at least 2 of the last 3 Combined_Scores exceed tau1
     - `assign_tier` maps the median of the last 3 scores: `<tau1 or gate failed -> 0`; `[tau1,tau2) -> 1`; `[tau2,tau3) -> 2`; `>=tau3 -> 3`; caps at Watch when only one signal contributes the deviation
     - `apply_hysteresis` steps a tier down only after 2 consecutive windows below its threshold
@@ -181,8 +181,8 @@ Implementation language is **Python 3.11+** (as specified in the design). Proper
     - **Property 19: Hysteresis prevents premature down-steps**
     - **Validates: Requirements 7.8**
 
-- [ ] 9. Implement the Movement_Check in `flag/context.py`
-  - [~] 9.1 Implement movement labeling and tier adjustment
+- [x] 9. Implement the Movement_Check in `flag/context.py`
+  - [x] 9.1 Implement movement labeling and tier adjustment
     - `movement_label` detects sustained movement and rhythmic/cadence motion from the accelerometer window into a `MovementState`
     - `apply_movement` reduces the tier by exactly one (floored at 0) and sets "explained by movement" when such movement is present, and leaves tier and label unchanged otherwise
     - _Requirements: 8.1, 8.2, 8.3_
@@ -192,8 +192,8 @@ Implementation language is **Python 3.11+** (as specified in the design). Proper
     - **Property 20: Movement check adjusts tier correctly**
     - **Validates: Requirements 8.1, 8.2, 8.3**
 
-- [ ] 10. Implement the Explainer in `flag/explain.py`
-  - [~] 10.1 Implement plain-language flag explanations
+- [x] 10. Implement the Explainer in `flag/explain.py`
+  - [x] 10.1 Implement plain-language flag explanations
     - `explain` ranks named signals by z-score contribution (non-increasing), reports each signal's real-unit shift relative to rest, includes the tier wording for the assigned tier, and includes start time, seconds persisted, Combined_Score, and movement-explained flag
     - Exclude diagnostic claims and color-coded severity terms
     - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5, 15.1, 15.2_
@@ -213,7 +213,7 @@ Implementation language is **Python 3.11+** (as specified in the design). Proper
     - **Property 23: Explanation carries required fields and neutral wording**
     - **Validates: Requirements 9.3, 9.4, 9.5, 15.1, 15.2**
 
-- [~] 11. Checkpoint - scoring and flagging layer
+- [x] 11. Checkpoint - scoring and flagging layer
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 12. Implement evaluation labels and metrics in `eval/labels.py` and `eval/metrics.py`

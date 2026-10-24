@@ -137,6 +137,16 @@
         "executionId": "c0427a7d-5ff4-4a59-9db5-b8fe40c8c964",
         "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
         "timestamp": 1792872351242
+      },
+      {
+        "executionId": "4a30602b-70f5-4591-8dec-6fc049f007aa",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792874115622
+      },
+      {
+        "executionId": "4a30602b-70f5-4591-8dec-6fc049f007aa",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792874349251
       }
     ],
     "7.1 Implement signed z-scores and combined scores": [
@@ -144,6 +154,16 @@
         "executionId": "c0427a7d-5ff4-4a59-9db5-b8fe40c8c964",
         "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
         "timestamp": 1792872351261
+      },
+      {
+        "executionId": "4a30602b-70f5-4591-8dec-6fc049f007aa",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792874351914
+      },
+      {
+        "executionId": "4a30602b-70f5-4591-8dec-6fc049f007aa",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792874564863
       }
     ],
     "8.1 Implement persistence gate, tier assignment, single-signal cap, and hysteresis": [
@@ -151,6 +171,16 @@
         "executionId": "c0427a7d-5ff4-4a59-9db5-b8fe40c8c964",
         "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
         "timestamp": 1792872351293
+      },
+      {
+        "executionId": "4a30602b-70f5-4591-8dec-6fc049f007aa",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792874567628
+      },
+      {
+        "executionId": "4a30602b-70f5-4591-8dec-6fc049f007aa",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792874784872
       }
     ],
     "9.1 Implement movement labeling and tier adjustment": [
@@ -158,6 +188,16 @@
         "executionId": "c0427a7d-5ff4-4a59-9db5-b8fe40c8c964",
         "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
         "timestamp": 1792872351313
+      },
+      {
+        "executionId": "4a30602b-70f5-4591-8dec-6fc049f007aa",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792874787650
+      },
+      {
+        "executionId": "4a30602b-70f5-4591-8dec-6fc049f007aa",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792874955215
       }
     ],
     "10.1 Implement plain-language flag explanations": [
@@ -165,6 +205,16 @@
         "executionId": "c0427a7d-5ff4-4a59-9db5-b8fe40c8c964",
         "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
         "timestamp": 1792872351333
+      },
+      {
+        "executionId": "4a30602b-70f5-4591-8dec-6fc049f007aa",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792874957850
+      },
+      {
+        "executionId": "4a30602b-70f5-4591-8dec-6fc049f007aa",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792875151737
       }
     ],
     "11. Checkpoint - scoring and flagging layer": [
@@ -172,6 +222,11 @@
         "executionId": "c0427a7d-5ff4-4a59-9db5-b8fe40c8c964",
         "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
         "timestamp": 1792872351351
+      },
+      {
+        "executionId": "4a30602b-70f5-4591-8dec-6fc049f007aa",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792875174288
       }
     ],
     "12.1 Implement phase labels and the ground-truth join": [
@@ -263,6 +318,41 @@
         "executionId": "c0427a7d-5ff4-4a59-9db5-b8fe40c8c964",
         "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
         "timestamp": 1792873970851
+      }
+    ],
+    "6. Implement the Baseline_Estimator in `flag/baseline.py`": [
+      {
+        "executionId": "4a30602b-70f5-4591-8dec-6fc049f007aa",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792874349296
+      }
+    ],
+    "7. Implement the Scorer in `flag/score.py`": [
+      {
+        "executionId": "4a30602b-70f5-4591-8dec-6fc049f007aa",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792874564905
+      }
+    ],
+    "8. Implement the Flagger tiers and hysteresis in `flag/tiers.py`": [
+      {
+        "executionId": "4a30602b-70f5-4591-8dec-6fc049f007aa",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792874784916
+      }
+    ],
+    "9. Implement the Movement_Check in `flag/context.py`": [
+      {
+        "executionId": "4a30602b-70f5-4591-8dec-6fc049f007aa",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792874955255
+      }
+    ],
+    "10. Implement the Explainer in `flag/explain.py`": [
+      {
+        "executionId": "4a30602b-70f5-4591-8dec-6fc049f007aa",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792875151780
       }
     ]
   }
