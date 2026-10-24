@@ -33,7 +33,26 @@ The Empatica E4 CSV header convention (see the dataset README and design
 - IBI.csv: row 1 is ``<start_timestamp>, IBI``; each subsequent row is
   ``<seconds_since_start>, <ibi_interval_seconds>``. The interval measurements
   (the second column) are stored in ``offsets_s``.
-- tags.csv: one Unix timestamp per line, with no header rows.
+- tags.csv: one timestamp per line, with no header rows.
+
+Timestamp formats (start-time cells and tag lines)
+--------------------------------------------------
+Two header forms are supported wherever a *timestamp* is read (the start-time
+cell in HR/TEMP/ACC/IBI and every entry in tags.csv):
+
+- the synthetic numeric form, a bare float of epoch seconds (e.g. ``1000.0``);
+- the real PhysioNet/Empatica form, a naive local-datetime string
+  ``"YYYY-MM-DD HH:MM:SS"`` (optionally with fractional seconds ``.%f``), e.g.
+  ``"2013-02-23 12:43:38"``.
+
+Datetime strings are parsed with one fixed convention — interpreted as UTC and
+converted to epoch seconds (``strptime(...).replace(tzinfo=timezone.utc)
+.timestamp()``). The absolute epoch this produces is *not* the true local wall
+time, but that does not matter downstream: only *relative* timing is ever used
+(differences between start times, tag times, and sample offsets). As long as
+every file for a participant is decoded with the same convention — and it is —
+those differences are exact. Sample-rate cells (row 2) are always numeric and
+are parsed as plain floats, never as timestamps.
 """
 
 from __future__ import annotations
@@ -41,6 +60,7 @@ from __future__ import annotations
 import csv
 import os
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 
 import numpy as np
 
@@ -168,6 +188,54 @@ def _read_rows(path: str) -> list[list[str]]:
     return rows
 
 
+# Accepted naive datetime layouts for a real Empatica/PhysioNet header or tag
+# cell: seconds precision and the same with fractional seconds. Both are parsed
+# as UTC (see the module docstring "Timestamp formats"); only relative timing is
+# used downstream, so the fixed UTC convention keeps every per-participant file
+# on one consistent timescale.
+_DATETIME_FORMATS: tuple[str, ...] = (
+    "%Y-%m-%d %H:%M:%S",
+    "%Y-%m-%d %H:%M:%S.%f",
+)
+
+
+def _parse_epoch_seconds(cell: str) -> float:
+    """Parse a timestamp cell to epoch seconds, accepting two header forms.
+
+    Handles both the synthetic numeric form (a bare float of epoch seconds, which
+    MUST keep working for existing/synthetic usage) and the real Empatica/
+    PhysioNet form (a naive datetime string ``"YYYY-MM-DD HH:MM:SS"``, optionally
+    with fractional seconds ``.%f``). A numeric cell is returned as-is (its float
+    value); a datetime string is interpreted as UTC and converted to epoch
+    seconds with the single convention
+    ``datetime.strptime(...).replace(tzinfo=timezone.utc).timestamp()``.
+
+    The resulting absolute epoch for a datetime string is *not* the true local
+    wall-clock time, but downstream code only ever uses relative timing
+    (differences between start times, tag times, and sample offsets), and every
+    file for a participant is decoded with the same convention, so those
+    differences are exact (see the module docstring "Timestamp formats").
+
+    Raises ``ValueError`` if the cell is neither numeric nor a recognized
+    datetime string.
+    """
+    text = cell.strip()
+    try:
+        return float(text)
+    except ValueError:
+        pass
+    for fmt in _DATETIME_FORMATS:
+        try:
+            dt = datetime.strptime(text, fmt)
+        except ValueError:
+            continue
+        return dt.replace(tzinfo=timezone.utc).timestamp()
+    raise ValueError(
+        f"timestamp cell {cell!r} is neither epoch seconds nor a "
+        f"'YYYY-MM-DD HH:MM:SS' datetime string"
+    )
+
+
 def load_signal(path: str, name: str) -> SignalSeries:
     """Load an E4 signal CSV (HR/TEMP/ACC and other single-channel signals).
 
@@ -190,13 +258,12 @@ def load_signal(path: str, name: str) -> SignalSeries:
 
     is_acc = name.strip().upper() == "ACC"
 
-    start_row = [float(c) for c in rows[0]]
-    rate_row = [float(c) for c in rows[1]]
-
     # The E4 header repeats the start time / rate once per channel. Take the
-    # first column as the scalar start time and sample rate.
-    start_utc = start_row[0]
-    sample_rate_hz = rate_row[0]
+    # first column as the scalar start time and sample rate. Row 1 (start time)
+    # may be a numeric epoch or a datetime string (see _parse_epoch_seconds);
+    # row 2 (sample rate) is always numeric.
+    start_utc = _parse_epoch_seconds(rows[0][0])
+    sample_rate_hz = float(rows[1][0])
 
     sample_rows = rows[2:]
     if is_acc:
@@ -236,8 +303,10 @@ def load_ibi(path: str) -> IBISeries:
     if not rows:
         raise ValueError(f"IBI file {path!r} is empty")
 
-    # Row 1: "<start_timestamp>" possibly followed by a header label ("IBI").
-    start_utc = float(rows[0][0])
+    # Row 1: "<start_timestamp>" possibly followed by a header label ("IBI") or
+    # a repeated start-time column. The start time may be a numeric epoch or a
+    # datetime string (see _parse_epoch_seconds).
+    start_utc = _parse_epoch_seconds(rows[0][0])
 
     intervals: list[float] = []
     for row in rows[1:]:
@@ -255,9 +324,11 @@ def load_tags(path: str) -> list[float]:
 
     Each entry is read as a button-press timestamp in epoch seconds
     (Requirement 1.3). The file has one timestamp per line and no header rows.
+    Each line may be a numeric epoch or a datetime string (see
+    :func:`_parse_epoch_seconds`).
     """
     rows = _read_rows(path)
-    return [float(row[0]) for row in rows]
+    return [_parse_epoch_seconds(row[0]) for row in rows]
 
 
 def cohort_of(participant_id: str) -> str:

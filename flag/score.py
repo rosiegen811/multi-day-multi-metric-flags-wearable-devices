@@ -60,6 +60,21 @@ a signal may lack a baseline. :func:`combined_score` computes the score from
 *exactly the available signals* for that window — an unavailable signal is simply
 dropped from the combination — and always returns a finite value (Property 14).
 
+For the Mahalanobis method this matters on **real data**: a single Ledoit–Wolf
+covariance is typically fit once over the full 3-signal z-vectors
+(:data:`SCORED_SIGNALS` = ``hr``, ``rmssd``, ``skin_temp``) and reused for every
+window, but on real PhysioNet recordings some windows have only a *subset* of
+those signals available (e.g. ``rmssd`` is ``NaN`` when IBI is sparse in that
+window). The score for such a window must still be computed over *exactly its
+available signals* (AC 6.7). The scorer handles this by **marginalizing** the
+covariance to the available signals: it sub-selects the rows/columns of the full
+covariance for the available signals and inverts that sub-matrix (the marginal
+precision ``pinv(cov_sub)``) rather than slicing the full precision (which would
+be the *conditional* precision). Marginalizing is the correct "score over the
+available signals" interpretation, and it leaves the all-signals-present result
+identical to inverting the full covariance. See :func:`mahalanobis_score` and
+:func:`combined_score` for the ``signals`` / ``cov_signals`` threading.
+
 Requirements covered
 --------------------
 - 6.1  HR increase above baseline → positive signed z (:func:`signed_z`).
@@ -74,7 +89,7 @@ Requirements covered
 
 from __future__ import annotations
 
-from typing import Mapping
+from typing import Mapping, Sequence
 
 import numpy as np
 import pandas as pd
@@ -230,6 +245,12 @@ def fit_ledoit_wolf(z_matrix: np.ndarray) -> LedoitWolf:
     this pipeline sees (design "Combined scoring"). The returned fitted estimator
     is what :func:`mahalanobis_score` and :func:`combined_score` accept as ``cov``.
 
+    Column order convention: callers fit the full-signal covariance with columns
+    ordered by :data:`~flag.baseline.SCORED_SIGNALS` (``hr``, ``rmssd``,
+    ``skin_temp``). :func:`mahalanobis_score` relies on that same canonical order
+    (its ``cov_signals`` default) to marginalize the covariance to a window's
+    available signals when they are a subset (AC 6.7).
+
     ``assume_centered=True`` is used because the z-vectors are already
     baseline-centered: the Mahalanobis center is the origin ``0``, not the sample
     mean (AC 6.6 / Property 13 — zero only at the baseline center).
@@ -240,50 +261,104 @@ def fit_ledoit_wolf(z_matrix: np.ndarray) -> LedoitWolf:
     return LedoitWolf(assume_centered=True).fit(data)
 
 
-def _precision_from_cov(cov, n_dims: int) -> np.ndarray:
+def _covariance_matrix(cov) -> np.ndarray | None:
+    """Resolve ``cov`` to a square covariance matrix (or ``None`` for Euclidean).
+
+    ``cov`` may be a fitted :class:`~sklearn.covariance.LedoitWolf` (its
+    ``covariance_`` is used), a square covariance matrix (``numpy`` array), or
+    ``None`` (Euclidean norm in z-space). Raises ``ValueError`` for a non-square
+    matrix.
+    """
+    if cov is None:
+        return None
+    covariance = getattr(cov, "covariance_", None)
+    if covariance is not None:
+        matrix = np.asarray(covariance, dtype=float)
+    else:
+        matrix = np.asarray(cov, dtype=float)
+    if matrix.ndim != 2 or matrix.shape[0] != matrix.shape[1]:
+        raise ValueError(
+            "mahalanobis covariance must be a square matrix or a fitted "
+            f"LedoitWolf, got shape {matrix.shape}"
+        )
+    return matrix
+
+
+def _precision_from_cov(
+    cov,
+    n_dims: int,
+    *,
+    signals: Sequence[str] | None = None,
+    cov_signals: Sequence[str] | None = None,
+) -> np.ndarray:
     """Resolve ``cov`` to an ``(n_dims, n_dims)`` precision (inverse-covariance).
 
     ``cov`` may be:
 
-    - a fitted :class:`~sklearn.covariance.LedoitWolf` (its ``precision_`` /
-      ``covariance_`` is used),
-    - a square covariance matrix (``numpy`` array — inverted here), or
+    - a fitted :class:`~sklearn.covariance.LedoitWolf` (its ``covariance_`` is
+      used),
+    - a square covariance matrix (``numpy`` array), or
     - ``None`` (falls back to the identity, i.e. a plain Euclidean norm in
       z-space, which is still a valid non-negative distance).
 
-    The matrix dimension must match ``n_dims`` (the number of available signals);
-    a mismatch raises ``ValueError`` so a caller that restricted the z-vector to a
-    subset of signals must pass a covariance over that same subset (AC 6.7).
+    Subset-of-signals (AC 6.7). When ``signals`` (the names the z-vector
+    corresponds to, length ``n_dims``) and ``cov_signals`` (the names the columns
+    of ``cov`` cover) are both given and ``signals`` is a *subset* of
+    ``cov_signals``, the covariance is **marginalized** to the available signals:
+    its rows/columns for ``signals`` are sub-selected and *that* sub-matrix is
+    inverted (``pinv(cov_sub)``). This is the marginal precision — the correct
+    "score over the available signals" interpretation — not a slice of the full
+    (conditional) precision. When ``signals == cov_signals`` (all present) the
+    result is identical to inverting the full covariance.
+
+    If ``signals`` / ``cov_signals`` are not supplied the covariance must already
+    match ``n_dims`` exactly (the synthetic / backward-compatible path). A
+    remaining dimension mismatch raises ``ValueError``.
     """
     if cov is None:
         return np.eye(n_dims)
 
-    precision = getattr(cov, "precision_", None)
-    if precision is not None:
-        precision = np.asarray(precision, dtype=float)
-    else:
-        covariance = getattr(cov, "covariance_", None)
-        if covariance is not None:
-            matrix = np.asarray(covariance, dtype=float)
-        else:
-            matrix = np.asarray(cov, dtype=float)
-        if matrix.ndim != 2 or matrix.shape[0] != matrix.shape[1]:
+    matrix = _covariance_matrix(cov)
+    assert matrix is not None  # cov is not None here
+
+    # Marginalize to the available signals when the window has a subset and we
+    # know both the z-vector's signal names and the covariance's column order.
+    if (
+        signals is not None
+        and cov_signals is not None
+        and matrix.shape[0] == len(cov_signals)
+    ):
+        index = {name: i for i, name in enumerate(cov_signals)}
+        try:
+            cols = [index[name] for name in signals]
+        except KeyError as exc:
             raise ValueError(
-                "mahalanobis covariance must be a square matrix or a fitted "
-                f"LedoitWolf, got shape {matrix.shape}"
-            )
+                f"available signal {exc.args[0]!r} is not covered by the "
+                f"covariance (covers {list(cov_signals)!r}); the covariance must "
+                f"cover the available signals (AC 6.7)"
+            ) from None
+        sub = matrix[np.ix_(cols, cols)]
+        precision = np.linalg.pinv(sub)
+    else:
         precision = np.linalg.pinv(matrix)
 
     if precision.shape != (n_dims, n_dims):
         raise ValueError(
             f"covariance/precision has shape {precision.shape} but the z-vector "
-            f"has {n_dims} available signal(s); the covariance must cover exactly "
-            f"the available signals (AC 6.7)"
+            f"has {n_dims} available signal(s); pass the covariance's column "
+            f"order via cov_signals and the window's signals so it can be "
+            f"marginalized to the available signals (AC 6.7)"
         )
     return precision
 
 
-def mahalanobis_score(z_vec: np.ndarray, cov: LedoitWolf) -> float:
+def mahalanobis_score(
+    z_vec: np.ndarray,
+    cov: LedoitWolf,
+    *,
+    signals: Sequence[str] | None = None,
+    cov_signals: Sequence[str] | None = None,
+) -> float:
     """Mahalanobis Combined_Score of ``z_vec`` in z-space (AC 6.6).
 
     The distance is ``sqrt(z^T P z)`` where ``P`` is the precision (inverse
@@ -297,12 +372,24 @@ def mahalanobis_score(z_vec: np.ndarray, cov: LedoitWolf) -> float:
     Euclidean norm. The distance is non-negative and finite; the quadratic form is
     clamped at ``0`` before the square root to absorb any tiny negative value from
     floating-point round-off on a near-singular precision.
+
+    Subset-of-signals (AC 6.7). When ``z_vec`` covers only a subset of the signals
+    ``cov`` was fit over — the real-data case where a window is missing a signal —
+    pass ``signals`` (the names, in ``z_vec`` order) and ``cov_signals`` (the
+    covariance's column order, canonically :data:`~flag.baseline.SCORED_SIGNALS`).
+    The covariance is then marginalized to ``signals`` before inversion, so a
+    2- or 1-signal window scores over exactly its available signals instead of
+    raising a dimension-mismatch error. With all signals present (or with
+    ``signals``/``cov_signals`` omitted and a matching covariance) the result is
+    unchanged.
     """
     z = np.asarray(z_vec, dtype=float).ravel()
     n = z.size
     if n == 0:
         return 0.0
-    precision = _precision_from_cov(cov, n)
+    precision = _precision_from_cov(
+        cov, n, signals=signals, cov_signals=cov_signals
+    )
     quad = float(z @ precision @ z)
     if not np.isfinite(quad) or quad <= 0.0:
         return 0.0
@@ -372,8 +459,13 @@ def combined_score(
       signed z-scores (AC 6.5).
     - ``"mahalanobis"`` (:data:`METHOD_MAHALANOBIS`) — the Mahalanobis distance in
       z-space using the Ledoit–Wolf ``cov`` (AC 6.6). The z-vector is ordered by
-      :data:`~flag.baseline.SCORED_SIGNALS` over the available signals; ``cov``
-      must cover exactly those dimensions (or be ``None`` for a Euclidean norm).
+      :data:`~flag.baseline.SCORED_SIGNALS` over the available signals. ``cov`` is
+      assumed to be fit over the full :data:`~flag.baseline.SCORED_SIGNALS` set in
+      that canonical column order; when the window has only a subset of those
+      signals, the covariance is marginalized to the available signals before
+      inversion (AC 6.7), so a window missing a signal — the real-data case where
+      e.g. ``rmssd`` is ``NaN`` — scores over exactly its available signals rather
+      than raising a dimension mismatch. Pass ``cov=None`` for a Euclidean norm.
 
     The result is always finite (Property 14): an empty window (no available
     signals) yields ``0.0``.
@@ -406,10 +498,18 @@ def combined_score(
     if method == METHOD_MAHALANOBIS:
         if not z:
             return 0.0
-        # Order the z-vector by the canonical scored-signal order so it matches a
-        # covariance fit over the same available-signal ordering.
-        ordered = [z[s] for s in SCORED_SIGNALS if s in z]
-        return mahalanobis_score(np.asarray(ordered, dtype=float), cov)
+        # Order the z-vector by the canonical scored-signal order and carry the
+        # available signal names so mahalanobis_score can marginalize a covariance
+        # fit over the full SCORED_SIGNALS set down to this window's signals (AC
+        # 6.7). cov is assumed to cover SCORED_SIGNALS in that canonical order.
+        available = [s for s in SCORED_SIGNALS if s in z]
+        ordered = [z[s] for s in available]
+        return mahalanobis_score(
+            np.asarray(ordered, dtype=float),
+            cov,
+            signals=available,
+            cov_signals=SCORED_SIGNALS,
+        )
 
     raise ValueError(
         f"unknown combined_score method {method!r}; expected "
