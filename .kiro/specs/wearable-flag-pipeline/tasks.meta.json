@@ -1,0 +1,269 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1.1 Create package scaffolding and dependency manifest": [
+      {
+        "executionId": "c0427a7d-5ff4-4a59-9db5-b8fe40c8c964",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792872350970
+      },
+      {
+        "executionId": "c0427a7d-5ff4-4a59-9db5-b8fe40c8c964",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792872357117
+      },
+      {
+        "executionId": "c0427a7d-5ff4-4a59-9db5-b8fe40c8c964",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792872655302
+      }
+    ],
+    "1.2 Implement the `Per_Window_Table` schema and shared records in `data/schema.py`": [
+      {
+        "executionId": "c0427a7d-5ff4-4a59-9db5-b8fe40c8c964",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792872351039
+      },
+      {
+        "executionId": "c0427a7d-5ff4-4a59-9db5-b8fe40c8c964",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792872658580
+      },
+      {
+        "executionId": "c0427a7d-5ff4-4a59-9db5-b8fe40c8c964",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792872898631
+      }
+    ],
+    "2.1 Implement E4 signal, IBI, tags, cohort, and cp1252 loaders": [
+      {
+        "executionId": "c0427a7d-5ff4-4a59-9db5-b8fe40c8c964",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792872351086
+      },
+      {
+        "executionId": "c0427a7d-5ff4-4a59-9db5-b8fe40c8c964",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792872905916
+      },
+      {
+        "executionId": "c0427a7d-5ff4-4a59-9db5-b8fe40c8c964",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792873060802
+      }
+    ],
+    "2.2 Implement participant assembly with missing-file tolerance": [
+      {
+        "executionId": "c0427a7d-5ff4-4a59-9db5-b8fe40c8c964",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792872351114
+      },
+      {
+        "executionId": "c0427a7d-5ff4-4a59-9db5-b8fe40c8c964",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792873070479
+      },
+      {
+        "executionId": "c0427a7d-5ff4-4a59-9db5-b8fe40c8c964",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792873182513
+      }
+    ],
+    "3.1 Implement the documented data-cleaning dispatch table": [
+      {
+        "executionId": "c0427a7d-5ff4-4a59-9db5-b8fe40c8c964",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792872351151
+      },
+      {
+        "executionId": "c0427a7d-5ff4-4a59-9db5-b8fe40c8c964",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792873189027
+      },
+      {
+        "executionId": "c0427a7d-5ff4-4a59-9db5-b8fe40c8c964",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792873466570
+      }
+    ],
+    "4.1 Implement protocol phase assignment from tags": [
+      {
+        "executionId": "c0427a7d-5ff4-4a59-9db5-b8fe40c8c964",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792872351178
+      },
+      {
+        "executionId": "c0427a7d-5ff4-4a59-9db5-b8fe40c8c964",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792873469600
+      },
+      {
+        "executionId": "c0427a7d-5ff4-4a59-9db5-b8fe40c8c964",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792873681707
+      }
+    ],
+    "4.2 Implement trailing-window segmentation into the Per_Window_Table": [
+      {
+        "executionId": "c0427a7d-5ff4-4a59-9db5-b8fe40c8c964",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792872351200
+      },
+      {
+        "executionId": "c0427a7d-5ff4-4a59-9db5-b8fe40c8c964",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792873684360
+      },
+      {
+        "executionId": "c0427a7d-5ff4-4a59-9db5-b8fe40c8c964",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792873970807
+      }
+    ],
+    "5. Checkpoint - data layer": [
+      {
+        "executionId": "c0427a7d-5ff4-4a59-9db5-b8fe40c8c964",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792872351222
+      },
+      {
+        "executionId": "c0427a7d-5ff4-4a59-9db5-b8fe40c8c964",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792873992430
+      }
+    ],
+    "6.1 Implement per-person baseline with warm-up exclusion and cohort shrinkage": [
+      {
+        "executionId": "c0427a7d-5ff4-4a59-9db5-b8fe40c8c964",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792872351242
+      }
+    ],
+    "7.1 Implement signed z-scores and combined scores": [
+      {
+        "executionId": "c0427a7d-5ff4-4a59-9db5-b8fe40c8c964",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792872351261
+      }
+    ],
+    "8.1 Implement persistence gate, tier assignment, single-signal cap, and hysteresis": [
+      {
+        "executionId": "c0427a7d-5ff4-4a59-9db5-b8fe40c8c964",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792872351293
+      }
+    ],
+    "9.1 Implement movement labeling and tier adjustment": [
+      {
+        "executionId": "c0427a7d-5ff4-4a59-9db5-b8fe40c8c964",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792872351313
+      }
+    ],
+    "10.1 Implement plain-language flag explanations": [
+      {
+        "executionId": "c0427a7d-5ff4-4a59-9db5-b8fe40c8c964",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792872351333
+      }
+    ],
+    "11. Checkpoint - scoring and flagging layer": [
+      {
+        "executionId": "c0427a7d-5ff4-4a59-9db5-b8fe40c8c964",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792872351351
+      }
+    ],
+    "12.1 Implement phase labels and the ground-truth join": [
+      {
+        "executionId": "c0427a7d-5ff4-4a59-9db5-b8fe40c8c964",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792872351372
+      }
+    ],
+    "12.2 Implement detection metrics per cohort": [
+      {
+        "executionId": "c0427a7d-5ff4-4a59-9db5-b8fe40c8c964",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792872351392
+      }
+    ],
+    "13.1 Implement the WHOOP_Rule and side-by-side comparison": [
+      {
+        "executionId": "c0427a7d-5ff4-4a59-9db5-b8fe40c8c964",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792872351413
+      }
+    ],
+    "14.1 Implement LOSO threshold calibration": [
+      {
+        "executionId": "c0427a7d-5ff4-4a59-9db5-b8fe40c8c964",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792872351433
+      }
+    ],
+    "15.1 Wire the LOSO evaluation harness and headline figures": [
+      {
+        "executionId": "c0427a7d-5ff4-4a59-9db5-b8fe40c8c964",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792872351457
+      }
+    ],
+    "16. Checkpoint - evaluation layer": [
+      {
+        "executionId": "c0427a7d-5ff4-4a59-9db5-b8fe40c8c964",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792872351482
+      }
+    ],
+    "17.1 Render the per-person timeline": [
+      {
+        "executionId": "c0427a7d-5ff4-4a59-9db5-b8fe40c8c964",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792872351501
+      }
+    ],
+    "18.1 Implement FHIR and CMS care-update export for Tier 2/3 flags": [
+      {
+        "executionId": "c0427a7d-5ff4-4a59-9db5-b8fe40c8c964",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792872351523
+      }
+    ],
+    "19. Final checkpoint - full pipeline": [
+      {
+        "executionId": "c0427a7d-5ff4-4a59-9db5-b8fe40c8c964",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792872351542
+      }
+    ],
+    "1. Set up project scaffolding, dependencies, and shared schema": [
+      {
+        "executionId": "c0427a7d-5ff4-4a59-9db5-b8fe40c8c964",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792872898673
+      }
+    ],
+    "2. Implement the Data_Loader in `data/physionet_load.py`": [
+      {
+        "executionId": "c0427a7d-5ff4-4a59-9db5-b8fe40c8c964",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792873182569
+      }
+    ],
+    "3. Implement the Cleaner in `data/clean.py`": [
+      {
+        "executionId": "c0427a7d-5ff4-4a59-9db5-b8fe40c8c964",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792873466632
+      }
+    ],
+    "4. Implement phase mapping and windowing in `data/windows.py`": [
+      {
+        "executionId": "c0427a7d-5ff4-4a59-9db5-b8fe40c8c964",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792873970851
+      }
+    ]
+  }
+}

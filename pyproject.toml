@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "wearable-flag-pipeline"
+version = "0.1.0"
+description = "Detect, tier, and explain sustained multi-metric physiological change from wrist-worn wearable signals, built and evaluated on the PhysioNet Empatica E4 dataset."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "ODC-By-1.0" }
+
+# Core runtime dependencies. Versions are pinned (exact) for reproducible
+# builds and are compatible with Python 3.11+ (prebuilt wheels
+# available for 3.11, 3.12, and 3.13).
+# macOS, Linux, and Windows wheels are published for all of these pins.
+dependencies = [
+    "numpy==2.2.6",
+    "pandas==2.2.3",
+    "scipy==1.15.3",
+    "scikit-learn==1.6.1",
+    "matplotlib==3.10.3",
+    "hypothesis==6.122.3",
+]
+
+[project.optional-dependencies]
+# Test tooling. Kept separate from runtime deps so a production install can
+# skip them: `pip install -e .[test]`.
+test = [
+    "pytest==8.3.4",
+]
+
+[tool.setuptools]
+# Explicit package list: one importable package per pipeline step. These map
+# to the design's layout (data/ flag/ eval/ app/ export/ output/).
+packages = ["data", "flag", "eval", "app", "export", "output"]
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+# Test discovery mirrors the package structure under tests/.
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-ra"
