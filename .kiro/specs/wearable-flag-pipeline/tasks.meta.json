@@ -378,16 +378,6 @@
     ],
     "17.1 Render the per-person timeline": [
       {
-        "executionId": "21ee0fe1-b317-47a2-bd21-18924f4c8c64",
-        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
-        "timestamp": 1792877574620
-      },
-      {
-        "executionId": "bc2d6986-f5be-4642-802a-6e48055be5a4",
-        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
-        "timestamp": 1792879872924
-      },
-      {
         "executionId": "2a7636b9-f625-44de-921c-b1bde2bb5f79",
         "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
         "timestamp": 1792880440595
@@ -426,6 +416,16 @@
         "executionId": "40f02410-ff8d-4f53-884f-9fc00ab6441e",
         "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
         "timestamp": 1792938602107
+      },
+      {
+        "executionId": "1b90bfed-0bcb-4e9c-bf28-4d14f48725c7",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792939438703
+      },
+      {
+        "executionId": "1b90bfed-0bcb-4e9c-bf28-4d14f48725c7",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792940082556
       }
     ],
     "18.1 Implement FHIR and CMS care-update export for Tier 2/3 flags": [

@@ -963,13 +963,70 @@ def render_nightly_timeline(
             transform=ax_score.get_yaxis_transform(),
             va="center", ha="left", fontsize=7, color=color,
         )
-    # Mark flagged nights.
+
+    # --- Robust y-limit for the score panel (rendering only; no pipeline math).
+    # On the full-history view the thresholds (tau1/tau2/tau3) and the bulk of
+    # nights live in a readable low band, while a handful of nights spike far
+    # above it (genuine Strong nights, and occasional degenerate warm-up nights
+    # whose trailing baseline had near-zero spread). Autoscaling to those peaks
+    # squashes the thresholds into an unreadable sliver, so we intentionally CAP
+    # the axis at a ROBUST upper bound — above tau3 and the bulk via a high
+    # percentile — and mark any night above the cap as off-scale with an
+    # up-caret + its true value, rather than stretching the axis. The bounds use
+    # percentiles (not raw min/max) so lone extreme sentinel scores can't drag
+    # the frame to absurd values. Deterministic: depends only on the finite
+    # scores + taus.
+    tau3_val = float(taus.tau3)
+    finite_scores = sub_scores[np.isfinite(sub_scores)]
+    if finite_scores.size:
+        hi_pct = float(np.percentile(finite_scores, 97.5))
+        lo_pct = float(np.percentile(finite_scores, 2.5))
+    else:
+        hi_pct = tau3_val
+        lo_pct = 0.0
+    # y_top sits comfortably above tau3 and the bulk (97.5th pct), with a small
+    # margin so the Strong line never hugs the top frame.
+    y_top = max(tau3_val * 1.15, hi_pct, tau3_val + 1.0)
+    # y_bottom from a robust low percentile (not the raw min), floored at 0 so a
+    # rare large-negative sentinel can't blow out the lower frame.
+    y_bottom = min(0.0, lo_pct - 0.5)
+    ax_score.set_ylim(y_bottom, y_top)
+
+    # Mark flagged nights (clamp marker y to the cap so off-scale flagged nights
+    # stay pinned to the top edge instead of vanishing above the axis).
     flagged_mask = sub_tiers >= TIER_WATCH
     if flagged_mask.any():
+        flagged_y = np.minimum(sub_scores[flagged_mask], y_top)
         ax_score.scatter(
-            dates[flagged_mask], sub_scores[flagged_mask],
+            dates[flagged_mask], flagged_y,
             s=36, facecolors="none", edgecolors="#d62728", linewidths=1.2, zorder=5,
         )
+
+    # Off-scale spikes: draw an up-caret at the cap + the true value so the
+    # viewer sees the night spiked above the axis without the axis stretching.
+    # Compact formatting keeps a genuine ~29 readable ("29.5") while an extreme
+    # sentinel prints in scientific form ("1.0e+09") instead of a 10-digit run.
+    def _fmt_offscale(v: float) -> str:
+        return f"{v:.1f}" if abs(v) < 1e4 else f"{v:.1e}"
+
+    offscale_idx = [
+        i for i in range(len(sub_scores))
+        if np.isfinite(sub_scores[i]) and sub_scores[i] > y_top
+    ]
+    for i in offscale_idx:
+        ax_score.plot(
+            dates[i], y_top, marker="^", markersize=7,
+            color="#d62728", markeredgecolor="#d62728",
+            clip_on=False, zorder=6,
+        )
+        ax_score.annotate(
+            _fmt_offscale(float(sub_scores[i])),
+            (dates[i], y_top),
+            textcoords="offset points", xytext=(0, 7),
+            fontsize=6.5, ha="center", va="bottom", color="#d62728",
+            clip_on=False, zorder=6,
+        )
+
     ax_score.set_ylabel("combined\nscore", fontsize=8)
     ax_score.grid(True, linestyle=":", alpha=0.4)
     ax_score.tick_params(labelsize=8)
@@ -1001,9 +1058,11 @@ def render_nightly_timeline(
         d = dates[i]
         label = d.strftime("%b %d") if d is not None else ""
         xytext = _offsets[ann_i % len(_offsets)]
+        # Anchor at the clamped y so off-scale nights annotate at the top edge.
+        anchor_y = min(float(sub_scores[i]), y_top)
         ax_score.annotate(
             f"{label} · {note}",
-            (dates[i], float(sub_scores[i])),
+            (dates[i], anchor_y),
             textcoords="offset points", xytext=xytext,
             fontsize=6.5, ha="center", color="#333333",
             bbox=dict(boxstyle="round,pad=0.2", fc="white", ec="#cccccc", alpha=0.85),
