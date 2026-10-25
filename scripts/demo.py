@@ -263,20 +263,26 @@ def hero_tiers(
     hero: str,
     *,
     budget: float,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray, bool]:
-    """Per-window scores + tiers + movement for the hero, with a demo-only fallback.
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, bool, object]:
+    """Per-window scores + tiers + movement + thresholds for the hero.
 
-    Returns ``(scores, tiers, movement, used_fallback)`` where every array is
-    aligned to ``built.table`` rows:
+    Returns ``(scores, tiers, movement, used_fallback, taus)`` where the three
+    arrays are aligned to ``built.table`` rows and ``taus`` is the
+    :class:`~data.schema.Thresholds` actually used to tier the hero (so the
+    timeline can draw the matching ``tau1/tau2/tau3`` lines), or ``None`` if none
+    could be determined:
 
     1. Compute the method's per-window ``scores`` (and single-signal cap flags).
     2. Run LOSO (``run_loso``) and keep the held-out tiers for the hero's rows.
+       The hero's own LOSO fold thresholds are the honest thresholds for the
+       hero's rows and are returned as ``taus``.
     3. If the hero has **no** tier>=1 window under LOSO (LOSO was too strict on
        this small demo cohort), fall back to calibrating thresholds on **all**
        subjects (``calibrate_on_subset``) and re-tier so the hero shows a flag.
        This fallback is a demo-only visualization choice (see the module
        docstring) — ``used_fallback`` records that it happened so the summary can
-       say so.
+       say so, and the fallback thresholds become the returned ``taus`` (they are
+       the ones that actually produced the hero's displayed tiers).
     """
     table = built.table
     scores, single_signal = method_scores(table, built.baselines, method)
@@ -288,13 +294,18 @@ def hero_tiers(
     person_ids = table["person_id"].astype(str).to_numpy()
     hero_mask = person_ids == str(hero)
 
+    # The hero's own held-out LOSO fold thresholds: the honest thresholds behind
+    # the hero's LOSO tiers, and what the timeline should draw unless the demo
+    # fallback below replaces them.
+    taus = loso.fold_thresholds.get(str(hero)) if loso.fold_thresholds else None
+
     used_fallback = False
     if hero_mask.any() and int(np.max(tiers[hero_mask], initial=0)) < 1:
         # LOSO produced no flag for the hero on this small cohort. Calibrate on
         # all subjects so the hero gets a non-trivial tier for the timeline.
         used_fallback = True
         try:
-            taus = calibrate_on_subset(
+            fallback_taus = calibrate_on_subset(
                 scores,
                 labels,
                 self_report,
@@ -304,7 +315,7 @@ def hero_tiers(
             )
             stream_ids = [(w.person_id, w.session) for w in labels.windows]
             all_tiers = tiers_from_scores(
-                scores, taus, stream_ids=stream_ids, single_signal=single_signal
+                scores, fallback_taus, stream_ids=stream_ids, single_signal=single_signal
             )
             idx = np.nonzero(hero_mask)[0]
             adj_tiers, adj_moved = movement_flags(
@@ -317,10 +328,13 @@ def hero_tiers(
             )
             tiers[idx] = adj_tiers
             movement[idx] = adj_moved
+            # The fallback thresholds are the ones that produced the displayed
+            # hero tiers, so those are what the timeline must draw.
+            taus = fallback_taus
         except Exception as exc:  # pragma: no cover - fallback best effort
             print(f"  note: all-subject calibration fallback failed ({exc})")
 
-    return scores, tiers, movement, used_fallback
+    return scores, tiers, movement, used_fallback, taus
 
 
 # ---------------------------------------------------------------------------
@@ -496,17 +510,20 @@ def run_demo(args: argparse.Namespace) -> int:
     used_fallback = False
 
     if hero in person_ids:
-        hero_scores, hero_tier_vec, hero_movement, used_fallback = hero_tiers(
+        hero_scores, hero_tier_vec, hero_movement, used_fallback, hero_taus = hero_tiers(
             built, labels, self_report, method, hero, budget=args.budget
         )
         hero_path = os.path.join(output_dir, f"timeline_{hero}.png")
         try:
+            # Pass the calibrated thresholds that produced the hero's displayed
+            # tiers so the score panel draws the matching tau1/tau2/tau3 lines.
             render_participant_timeline(
                 built,
                 hero,
                 hero_scores,
                 hero_tier_vec,
                 movement=hero_movement,
+                taus=hero_taus,
                 output_path=hero_path,
                 title=f"Hero timeline — {hero} ({method})",
             )
@@ -522,6 +539,13 @@ def run_demo(args: argparse.Namespace) -> int:
         # is that it stays quiet.
         calm_scores, _ = method_scores(built.table, built.baselines, method)
         calm_loso = run_loso(built, labels, self_report, method, budget=args.budget)
+        # The calm subject's own held-out LOSO fold thresholds, so its timeline
+        # draws the same honest thresholds that kept it near Tier 0.
+        calm_taus = (
+            calm_loso.fold_thresholds.get(str(calm))
+            if calm_loso.fold_thresholds
+            else None
+        )
         calm_path = os.path.join(output_dir, f"timeline_{calm}.png")
         try:
             render_participant_timeline(
@@ -530,6 +554,7 @@ def run_demo(args: argparse.Namespace) -> int:
                 calm_scores,
                 calm_loso.tiers,
                 movement=calm_loso.movement,
+                taus=calm_taus,
                 output_path=calm_path,
                 title=f"Calm contrast — {calm} ({method})",
             )

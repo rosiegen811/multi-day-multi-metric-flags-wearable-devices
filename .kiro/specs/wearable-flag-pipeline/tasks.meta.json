@@ -77,6 +77,16 @@
         "executionId": "c0427a7d-5ff4-4a59-9db5-b8fe40c8c964",
         "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
         "timestamp": 1792873182513
+      },
+      {
+        "executionId": "276d8560-5c14-4e8b-a8e5-f6bf9d9f8ccf",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792935022766
+      },
+      {
+        "executionId": "276d8560-5c14-4e8b-a8e5-f6bf9d9f8ccf",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792935527143
       }
     ],
     "3.1 Implement the documented data-cleaning dispatch table": [
@@ -368,16 +378,6 @@
     ],
     "17.1 Render the per-person timeline": [
       {
-        "executionId": "c0427a7d-5ff4-4a59-9db5-b8fe40c8c964",
-        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
-        "timestamp": 1792872351501
-      },
-      {
-        "executionId": "21ee0fe1-b317-47a2-bd21-18924f4c8c64",
-        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
-        "timestamp": 1792877281672
-      },
-      {
         "executionId": "21ee0fe1-b317-47a2-bd21-18924f4c8c64",
         "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
         "timestamp": 1792877574620
@@ -396,6 +396,36 @@
         "executionId": "2a7636b9-f625-44de-921c-b1bde2bb5f79",
         "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
         "timestamp": 1792880801908
+      },
+      {
+        "executionId": "78239360-8555-4666-855e-ef5e44b6d87f",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792935752297
+      },
+      {
+        "executionId": "78239360-8555-4666-855e-ef5e44b6d87f",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792936491730
+      },
+      {
+        "executionId": "45cc1b4a-445e-49d1-bc0b-907d1482560c",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792936563763
+      },
+      {
+        "executionId": "45cc1b4a-445e-49d1-bc0b-907d1482560c",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792937358055
+      },
+      {
+        "executionId": "40f02410-ff8d-4f53-884f-9fc00ab6441e",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792937483836
+      },
+      {
+        "executionId": "40f02410-ff8d-4f53-884f-9fc00ab6441e",
+        "chatSessionId": "sess_f150c06e-c4d3-4e62-9724-25cd8f288446",
+        "timestamp": 1792938602107
       }
     ],
     "18.1 Implement FHIR and CMS care-update export for Tier 2/3 flags": [

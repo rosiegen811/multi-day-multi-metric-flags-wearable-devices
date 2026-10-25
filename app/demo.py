@@ -102,6 +102,9 @@ __all__ = [
     "collect_flag_explanations",
     "render_timeline",
     "render_participant_timeline",
+    "NIGHTLY_SIGNAL_PANELS",
+    "TIER_STRIP_SHADES",
+    "render_nightly_timeline",
 ]
 
 
@@ -308,12 +311,13 @@ def _shade_phases(
     segments: Sequence[PhaseSegment],
     t0: float,
 ) -> list[tuple[str, float, float, str]]:
-    """Shade each phase segment across all ``axes`` via ``axvspan`` (AC 13.1).
+    """Shade each protocol-phase segment across ``axes`` via ``axvspan`` (AC 13.1).
 
     Returns the legend entries ``(phase, start_rel, end_rel, color)`` (times
-    re-based so ``t0`` is 0) so the caller can build a phase legend. The shading
-    spans every panel, so a phase lines up vertically across the signals, the
-    score, and the tier.
+    re-based so ``t0`` is 0) so the caller can build a phase legend. The caller
+    passes the *signal* mini-panels here (not the score panel): colored phase
+    shading is the protocol *context*, kept visually distinct from the greyscale
+    *severity-tier* shading the score panel reserves for itself.
     """
     legend: list[tuple[str, float, float, str]] = []
     for i, seg in enumerate(segments):
@@ -324,42 +328,40 @@ def _shade_phases(
         if end_rel <= start_rel:
             end_rel = start_rel + 1e-6
         for ax in axes:
-            ax.axvspan(start_rel, end_rel, color=color, alpha=0.6, zorder=0, linewidth=0)
+            ax.axvspan(start_rel, end_rel, color=color, alpha=0.5, zorder=0, linewidth=0)
         legend.append((seg.phase, start_rel, end_rel, color))
     return legend
 
 
-def _draw_signals(ax: plt.Axes, t_rel: np.ndarray, table: pd.DataFrame, show_acc: bool) -> None:
-    """Draw the raw signals on ``ax`` (HR / HRV / skin temp on twin axes; AC 13.1)."""
-    host = ax
-    # HR on the host axis.
-    axes_for_signals = [host]
-    host.set_ylabel("bpm / ms / C")
-    handles: list = []
+def _draw_signal_panel(
+    ax: plt.Axes,
+    t_rel: np.ndarray,
+    table: pd.DataFrame,
+    col: str,
+    display: str,
+    unit: str,
+    color: str,
+    baselines: Mapping[str, SignalBaseline],
+) -> None:
+    """Draw one signal as a small-multiple mini-panel on its own y-scale.
 
-    for col, display, unit, color in SIGNAL_SERIES:
-        if col not in table.columns:
-            continue
+    Mirrors the readable WHOOP nightly look (:func:`render_nightly_timeline`):
+    each signal gets its own panel in its own real unit rather than being crammed
+    onto one shared twin axis, with a faint dashed baseline-median reference line
+    from ``baselines`` when available (the "your resting normal" anchor; AC 9.2
+    context). Missing data (``NaN``) is left as a gap.
+    """
+    if col in table.columns:
         y = pd.to_numeric(table[col], errors="coerce").to_numpy(dtype=float)
-        (line,) = host.plot(
-            t_rel, y, color=color, linewidth=1.2, label=f"{display} ({unit})"
-        )
-        handles.append(line)
-
-    if show_acc and "acc_mag" in table.columns:
-        acc_ax = host.twinx()
-        axes_for_signals.append(acc_ax)
-        y = pd.to_numeric(table["acc_mag"], errors="coerce").to_numpy(dtype=float)
-        (line,) = acc_ax.plot(
-            t_rel, y, color="#7f7f7f", linewidth=0.8, alpha=0.7, label="acc_mag"
-        )
-        acc_ax.set_ylabel("acc_mag", color="#7f7f7f")
-        acc_ax.tick_params(axis="y", labelcolor="#7f7f7f")
-        handles.append(line)
-
-    host.set_title("Signals")
-    host.legend(handles=handles, loc="upper right", fontsize=7, framealpha=0.8)
-    host.grid(True, linestyle=":", alpha=0.4)
+        ax.plot(t_rel, y, color=color, linewidth=1.2)
+        b = baselines.get(col)
+        if b is not None and np.isfinite(float(b.median)):
+            ax.axhline(
+                float(b.median), color=color, linewidth=0.8, alpha=0.35, linestyle="--"
+            )
+    ax.set_ylabel(f"{display}\n({unit})", fontsize=8)
+    ax.grid(True, linestyle=":", alpha=0.4)
+    ax.tick_params(labelsize=8)
 
 
 def render_timeline(
@@ -373,17 +375,39 @@ def render_timeline(
     segments: Sequence[PhaseSegment] | None = None,
     show_acc: bool = False,
     annotate_all: bool = False,
+    taus=None,
     output_path: str | None = None,
     title: str | None = None,
 ) -> plt.Figure:
     """Render one participant's timeline and (optionally) save it as a PNG (Req. 13).
 
-    Builds a headless matplotlib figure of four vertically stacked, x-shared
-    panels — signals, Combined_Score, Severity_Tier bands, and a flag-explanation
-    text panel — with protocol-phase shading spanning the first three panels (AC
-    13.1). Flagged windows (tier ``>= Watch``) carry the Explainer's neutral,
-    non-diagnostic explanation, annotated on the tier panel and listed in the text
-    panel (AC 13.2).
+    Restyled to match the readable WHOOP nightly look
+    (:func:`render_nightly_timeline`), adapted to PhysioNet's per-*window* data:
+
+    - **Signal small-multiples.** Each scored signal — ``hr`` (bpm), ``rmssd``
+      (ms), ``skin_temp`` (C) — gets its own mini-panel on its own real-unit
+      y-scale with a faint dashed baseline-median reference line (from
+      ``baselines`` when present), instead of being crammed onto one shared twin
+      axis. ``acc_mag`` gets a 4th mini-panel only when ``show_acc`` is set.
+    - **Merged score + tier panel.** The Combined_Score line and the
+      Severity_Tier are drawn on one panel: the tier is painted as muted-grey
+      background shading (:data:`TIER_STRIP_SHADES`, tier 0 left unshaded) behind
+      the score line, and when ``taus`` is supplied its ``tau1/tau2/tau3`` are
+      drawn as labelled threshold lines so a viewer can see *why* a window
+      crossed into a tier. Flagged windows (tier ``>= Watch``) are marked and a
+      neutral tier legend is shown. There is no separate tier strip panel.
+    - **Phase context stays colored, severity stays greyscale.** Because the
+      score panel now uses greyscale for the *severity tier*, the colored
+      protocol-**phase** shading (PhysioNet-specific) is drawn on the *signal*
+      mini-panels via ``axvspan`` with the existing phase legend. Keeping phase
+      (colored context) and tier (greyscale severity) on different panels and
+      palettes keeps the two meanings visually distinct (AC 13.1, 15.2).
+    - **Flag explanations** for flagged windows remain visible in a text panel
+      (AC 13.2).
+
+    The x-axis is PhysioNet elapsed **seconds** ("time since first window (s)"),
+    re-based to 0 at the first window — *not* calendar dates — with a
+    ``MaxNLocator`` so a multi-thousand-second session is not cramped.
 
     Parameters
     ----------
@@ -399,7 +423,7 @@ def render_timeline(
         alongside the rows so they stay aligned.
     baselines:
         The participant's ``{signal -> SignalBaseline}`` for the real-unit shifts
-        in the explanations (AC 9.2).
+        in the explanations (AC 9.2) and the per-signal reference lines.
     movement:
         Optional per-window ``movement_explained`` flags, aligned to ``table``.
     segments:
@@ -407,10 +431,15 @@ def render_timeline(
         are derived from the filtered per-person table via
         :func:`eval.labels.phase_segments`.
     show_acc:
-        Also plot ``acc_mag`` on a twin y-axis of the signals panel.
+        Also draw ``acc_mag`` as a 4th signal mini-panel.
     annotate_all:
         Annotate every flagged window rather than one per contiguous flagged run
         (the default collapses to the run onset to reduce clutter; AC 13.2).
+    taus:
+        Optional calibrated :class:`~data.schema.Thresholds`. When provided the
+        ``tau1/tau2/tau3`` are drawn as labelled lines on the score panel; when
+        ``None`` only the score line and tier shading are drawn (no fabricated
+        thresholds).
     output_path:
         When given, the figure is saved here as a PNG (parent dirs created).
     title:
@@ -467,56 +496,133 @@ def render_timeline(
         first_per_run=not annotate_all,
     )
 
-    fig, (ax_sig, ax_score, ax_tier, ax_text) = plt.subplots(
-        4,
+    from matplotlib.patches import Patch
+    from matplotlib.ticker import MaxNLocator
+
+    # Which signals get a mini-panel: the three scored signals, plus acc_mag only
+    # when show_acc is set. Each on its own real-unit y-scale (small multiples).
+    panel_specs = [spec for spec in NIGHTLY_SIGNAL_PANELS if spec[0] in sub.columns]
+    if show_acc and "acc_mag" in sub.columns:
+        panel_specs = panel_specs + [("acc_mag", "movement", "acc", "#7f7f7f")]
+    n_sig = len(panel_specs)
+
+    # Layout: n_sig signal mini-panels, one merged score+tier panel, one flag-text
+    # panel. The time panels (signals + score) share the x-axis; the text panel is
+    # kept independent so its layout is not stretched by the shared axis.
+    height_ratios = [1.2] * n_sig + [3.0, 2.2]
+    fig, axes = plt.subplots(
+        n_sig + 2,
         1,
-        figsize=(11.0, 10.0),
+        figsize=(11.0, 2.0 + 1.25 * n_sig + 5.0),
         sharex=False,
-        gridspec_kw={"height_ratios": [3.0, 2.0, 1.4, 2.4], "hspace": 0.35},
+        gridspec_kw={"height_ratios": height_ratios, "hspace": 0.35},
+    )
+    sig_axes = list(axes[:n_sig])
+    ax_score = axes[n_sig]
+    ax_text = axes[n_sig + 1]
+
+    for ax in sig_axes:
+        ax.sharex(ax_score)
+
+    # Colored protocol-PHASE shading on the SIGNAL mini-panels (AC 13.1). The
+    # score panel reserves greyscale for the SEVERITY TIER (below), so phase
+    # context (color) and severity (greyscale) never share a palette or a panel.
+    phase_legend = _shade_phases(sig_axes, segments, t0) if sig_axes else []
+
+    # Signal mini-panels (each its own y-scale + faint baseline reference line).
+    for ax, (col, display, unit, color) in zip(sig_axes, panel_specs):
+        _draw_signal_panel(ax, t_rel, sub, col, display, unit, color, baselines)
+    if sig_axes:
+        sig_axes[0].set_title("Signals (each on its own scale)", fontsize=10, loc="left")
+
+    # --- Merged Combined_Score + Severity_Tier panel. ---
+    # Tier painted as muted-grey background bands (one axvspan per contiguous run
+    # of same-tier windows; tier 0 unshaded). Neutral greyscale, never a
+    # red/green health verdict (AC 15.2).
+    if len(t_rel) >= 1:
+        if len(t_rel) >= 2:
+            half = float(np.median(np.diff(t_rel))) / 2.0
+        else:
+            half = 0.5
+        start = 0
+        for pos in range(1, len(sub_tiers) + 1):
+            if pos == len(sub_tiers) or int(sub_tiers[pos]) != int(sub_tiers[start]):
+                tier = min(max(int(sub_tiers[start]), 0), 3)
+                if tier > 0:  # leave None unshaded for a cleaner look
+                    left = t_rel[start] - half
+                    right = t_rel[pos - 1] + half
+                    ax_score.axvspan(
+                        left, right,
+                        facecolor=TIER_STRIP_SHADES[tier], alpha=0.45,
+                        edgecolor="none", zorder=0,
+                    )
+                start = pos
+
+    ax_score.plot(t_rel, sub_scores, color="#111111", linewidth=1.3, zorder=4)
+
+    # Tuned threshold lines, only when supplied (never fabricated).
+    if taus is not None:
+        threshold_lines = (
+            (float(taus.tau1), "Watch (tau1)", "#9467bd"),
+            (float(taus.tau2), "Notable (tau2)", "#ff7f0e"),
+            (float(taus.tau3), "Strong (tau3)", "#8c564b"),
+        )
+        for level, label, color in threshold_lines:
+            ax_score.axhline(
+                level, color=color, linewidth=1.0, linestyle="--", alpha=0.9, zorder=3
+            )
+            ax_score.text(
+                1.005, level, label,
+                transform=ax_score.get_yaxis_transform(),
+                va="center", ha="left", fontsize=7, color=color,
+            )
+
+    # Mark flagged windows on the score line (AC 13.2).
+    flagged_mask = sub_tiers >= TIER_WATCH
+    if flagged_mask.any():
+        ax_score.scatter(
+            t_rel[flagged_mask], sub_scores[flagged_mask],
+            s=34, facecolors="none", edgecolors="#d62728", linewidths=1.2, zorder=5,
+        )
+    # Annotate each reported flagged window (onset per run by default) so the
+    # text-panel numbering lines up with the marks on the score panel. ``fw.row_index``
+    # is the positional row into ``sub`` (collect_flag_explanations builds it from
+    # the same per-person table), so x/y come straight off that window.
+    for i, fw in enumerate(flagged):
+        ridx = int(fw.row_index)
+        if 0 <= ridx < len(t_rel):
+            ax_score.annotate(
+                f"#{i + 1}",
+                (float(t_rel[ridx]), float(sub_scores[ridx])),
+                textcoords="offset points",
+                xytext=(2, 7),
+                fontsize=7,
+                color="#d62728",
+                zorder=6,
+            )
+
+    ax_score.set_title(
+        "Combined score with severity-tier shading" + (" and tuned thresholds" if taus is not None else ""),
+        fontsize=10, loc="left",
+    )
+    ax_score.set_ylabel("combined\nscore", fontsize=8)
+    ax_score.set_xlabel("time since first window (s)")
+    ax_score.grid(True, linestyle=":", alpha=0.4)
+    ax_score.tick_params(labelsize=8)
+    ax_score.xaxis.set_major_locator(MaxNLocator(nbins=10, integer=False))
+
+    # Neutral severity-tier legend (muted greyscale — NOT a health verdict).
+    tier_handles = [
+        Patch(facecolor=TIER_STRIP_SHADES[t], edgecolor="#bbbbbb", label=tier_label(t))
+        for t in sorted(TIER_LABELS)
+    ]
+    ax_score.legend(
+        handles=tier_handles, loc="upper right", ncol=4, fontsize=7, framealpha=0.9,
+        title="severity tier shading (neutral, not a health verdict)",
+        title_fontsize=7,
     )
 
-    # The first three panels share the time axis explicitly (sharex on the text
-    # panel would stretch it; we keep the text panel independent).
-    ax_score.sharex(ax_sig)
-    ax_tier.sharex(ax_sig)
-
-    # Phase shading spans the three time panels (AC 13.1).
-    phase_legend = _shade_phases((ax_sig, ax_score, ax_tier), segments, t0)
-
-    # Panel 1: signals.
-    _draw_signals(ax_sig, t_rel, sub, show_acc)
-
-    # Panel 2: Combined_Score.
-    ax_score.plot(t_rel, sub_scores, color="#111111", linewidth=1.3)
-    ax_score.set_title("Combined score")
-    ax_score.set_ylabel("score")
-    ax_score.grid(True, linestyle=":", alpha=0.4)
-
-    # Panel 3: Severity_Tier bands (neutral labels, never color-coded; AC 15.2).
-    ax_tier.step(t_rel, sub_tiers, where="post", color="#111111", linewidth=1.3)
-    ax_tier.fill_between(t_rel, 0, sub_tiers, step="post", color="#111111", alpha=0.12)
-    ax_tier.set_ylim(-0.3, 3.3)
-    ax_tier.set_yticks(sorted(TIER_LABELS))
-    ax_tier.set_yticklabels([tier_label(t) for t in sorted(TIER_LABELS)])
-    ax_tier.set_title("Severity tier")
-    ax_tier.set_ylabel("tier")
-    ax_tier.set_xlabel("time since first window (s)")
-    ax_tier.grid(True, linestyle=":", alpha=0.4)
-
-    # Annotate flagged windows on the tier panel (AC 13.2).
-    for i, fw in enumerate(flagged):
-        x = float(fw.t_win) - t0
-        ax_tier.axvline(x, color="#d62728", linewidth=0.9, alpha=0.7, zorder=4)
-        ax_tier.annotate(
-            f"#{i + 1}",
-            (x, float(fw.tier)),
-            textcoords="offset points",
-            xytext=(2, 4),
-            fontsize=7,
-            color="#d62728",
-        )
-
-    # Panel 4: flag explanations (AC 13.2).
+    # Flag-explanation text panel (AC 13.2).
     ax_text.axis("off")
     ax_text.set_title("Flag explanations", loc="left", fontsize=10)
     if flagged:
@@ -550,30 +656,27 @@ def render_timeline(
             fontsize=9,
         )
 
-    # Phase legend across the top of the signals panel.
-    if phase_legend:
-        from matplotlib.patches import Patch
-
+    # Colored protocol-phase legend on the top signal mini-panel (context, not
+    # severity). Kept distinct from the greyscale tier legend on the score panel.
+    if phase_legend and sig_axes:
         seen: dict[str, str] = {}
         for phase, _s, _e, color in phase_legend:
             seen.setdefault(phase, color)
         handles = [Patch(facecolor=c, edgecolor="none", label=p) for p, c in seen.items()]
-        ax_sig.legend(
-            handles=ax_sig.get_legend().legend_handles + handles
-            if ax_sig.get_legend()
-            else handles,
+        sig_axes[0].legend(
+            handles=handles,
             loc="upper right",
-            fontsize=7,
+            fontsize=6.5,
             framealpha=0.8,
-            ncol=2,
+            ncol=3,
+            title="protocol phase (context)",
+            title_fontsize=6.5,
         )
 
     session = str(sub["session"].iloc[0]) if "session" in sub.columns and len(sub) else ""
     default_title = f"Timeline — {person_id}" + (f" ({session})" if session else "")
     fig.suptitle(title or default_title, fontsize=13)
-    # Reserve headroom for the suptitle without ``tight_layout`` (which warns on
-    # the signals panel's twin axis when ``show_acc`` is set).
-    fig.subplots_adjust(top=0.94)
+    fig.subplots_adjust(top=0.94, right=0.88)
 
     if output_path is not None:
         parent = os.path.dirname(os.path.abspath(output_path))
@@ -604,6 +707,7 @@ def render_participant_timeline(
     movement: Sequence[bool] | np.ndarray | None = None,
     show_acc: bool = False,
     annotate_all: bool = False,
+    taus=None,
     output_path: str | None = None,
     title: str | None = None,
 ) -> plt.Figure:
@@ -621,6 +725,10 @@ def render_participant_timeline(
     selected person's baseline set is handed to the Explainer for real-unit shifts
     (AC 9.2). A person with no baseline set renders with empty baselines (the
     explanations then fall back to the flag-carried deltas).
+
+    ``taus`` is an optional calibrated :class:`~data.schema.Thresholds`, threaded
+    through to :func:`render_timeline` so the score panel can draw labelled
+    ``tau1/tau2/tau3`` threshold lines; pass ``None`` to omit them.
     """
     table = built.table
     baselines = dict(built.baselines.get(str(person_id), {}))
@@ -633,6 +741,314 @@ def render_participant_timeline(
         movement=movement,
         show_acc=show_acc,
         annotate_all=annotate_all,
+        taus=taus,
         output_path=output_path,
         title=title,
     )
+
+
+# ---------------------------------------------------------------------------
+# Nightly timeline (WHOOP real-run view) — a *readable* calendar-dated variant
+# ---------------------------------------------------------------------------
+#
+# ``render_timeline`` above is the PhysioNet per-window view: a shared x-axis in
+# elapsed SECONDS, the signals as small-multiple mini-panels, a merged score+tier
+# panel, and colored protocol-phase shading on the signal panels. A WHOOP export,
+# by contrast, is hundreds of nights spaced ~1 day apart with no protocol phases,
+# so ``render_nightly_timeline`` below is a *separate* function that plots the
+# same merged-panel idea on a human DATE axis instead of seconds. It does not
+# touch ``render_timeline``. It computes no new science — it draws exactly the
+# per-night scores, tiers, tuned thresholds and baselines handed to it by
+# ``scripts/whoop_run.py``.
+
+# One mini-panel per scored signal so each has its own y-scale in its own real
+# unit (resting HR bpm, HRV ms, skin temp C) — no cramming incomparable units
+# onto one axis: (column, display, unit, color).
+NIGHTLY_SIGNAL_PANELS: tuple[tuple[str, str, str, str], ...] = (
+    ("hr", "resting HR", "bpm", "#d62728"),
+    ("rmssd", "HRV", "ms", "#1f77b4"),
+    ("skin_temp", "skin temp", "C", "#2ca02c"),
+)
+
+# Muted, sequential grey shades for the severity-tier background shading on the
+# nightly score panel — deliberately NOT a red/amber/green health verdict (the
+# project avoids alarming medical color coding; the shading carries a neutral
+# "severity tier" legend). Index by tier 0..3: darker = higher tier.
+TIER_STRIP_SHADES: tuple[str, ...] = (
+    "#f5f5f5",  # 0 None
+    "#c7c7c7",  # 1 Watch
+    "#8a8a8a",  # 2 Notable
+    "#3f3f3f",  # 3 Strong
+)
+
+
+def _epoch_to_datetimes(t_win: np.ndarray) -> np.ndarray:
+    """Convert epoch-second window times to an array of ``datetime`` objects (UTC).
+
+    The nightly x-axis is human dates, not seconds; matplotlib plots
+    ``datetime`` objects directly and formats month/day ticks itself.
+    """
+    from datetime import datetime, timezone
+
+    out: list = []
+    for t in t_win:
+        try:
+            out.append(datetime.fromtimestamp(float(t), tz=timezone.utc))
+        except (ValueError, OverflowError, OSError):
+            out.append(None)
+    return np.array(out, dtype=object)
+
+
+def render_nightly_timeline(
+    table: pd.DataFrame,
+    person_id: str,
+    scores: Sequence[float] | np.ndarray,
+    tiers: Sequence[int] | np.ndarray,
+    baselines: Mapping[str, SignalBaseline],
+    taus,
+    *,
+    movement: Sequence[bool] | np.ndarray | None = None,
+    last_n: int | None = 90,
+    max_annotations: int = 4,
+    output_path: str | None = None,
+    title: str | None = None,
+) -> plt.Figure:
+    """Render a *readable* nightly WHOOP timeline on a human DATE axis.
+
+    A separate, calendar-dated companion to :func:`render_timeline` for the
+    hundreds-of-nights WHOOP real run. Two groups of panels share a date x-axis:
+
+    1. Three signal mini-panels — resting HR (bpm), HRV (ms), skin temp (C) — each
+       on its own y-scale in its own unit (small multiples, never one shared axis
+       of incomparable units).
+    2. The combined score, with the tuned ``taus.tau1 / tau2 / tau3`` drawn as
+       labelled horizontal lines (Watch / Notable / Strong) so a viewer can *see*
+       why a night crossed into a tier. The severity tier is overlaid onto this
+       same panel as subtle background shading — one muted-grey band per contiguous
+       run of same-tier nights (darker = higher tier) — so "score rose above tau2
+       and the background darkens to Notable" reads in a single panel. The bands
+       use a neutral greyscale legend, not a red/green health verdict (AC 15.2).
+
+    Flagged nights (tier >= Watch) are marked on the score panel; the few
+    highest-tier nights are annotated with their date and top contributing signal
+    in real units.
+
+    Parameters
+    ----------
+    table, scores, tiers, baselines, movement:
+        Same per-night inputs as the WHOOP run produces (aligned to the full
+        ``table``; filtered to ``person_id`` and sorted by ``t_win`` here).
+    taus:
+        The tuned :class:`~data.schema.Thresholds` for the threshold lines.
+    last_n:
+        Show only the most recent ``last_n`` nights (default 90) for legibility;
+        ``None`` shows the full history.
+    max_annotations:
+        Annotate at most this many of the highest-tier flagged nights.
+    output_path:
+        When given, the figure is saved here as a PNG (parent dirs created).
+    title:
+        Optional figure suptitle.
+    """
+    if "person_id" not in table.columns:
+        raise ValueError("table is missing the 'person_id' column")
+
+    n_all = len(table)
+    score_all = _as_float_array(scores, n_all, "scores")
+    tier_all = _as_int_array(tiers, n_all, "tiers")
+    move_all = (
+        np.zeros(n_all, dtype=bool)
+        if movement is None
+        else _as_int_array(movement, n_all, "movement").astype(bool)
+    )
+
+    mask = table["person_id"].astype(str).to_numpy() == str(person_id)
+    if not mask.any():
+        raise ValueError(f"person_id {person_id!r} not found in table")
+
+    sub = table.loc[mask].copy()
+    sub_scores = score_all[mask]
+    sub_tiers = tier_all[mask]
+    sub_move = move_all[mask]
+
+    order = np.argsort(sub["t_win"].to_numpy(dtype=float), kind="stable")
+    sub = sub.iloc[order].reset_index(drop=True)
+    sub_scores = sub_scores[order]
+    sub_tiers = sub_tiers[order]
+    sub_move = sub_move[order]
+
+    # Trim to the most recent window so the detail is legible.
+    if last_n is not None and len(sub) > last_n:
+        sub = sub.iloc[-last_n:].reset_index(drop=True)
+        sub_scores = sub_scores[-last_n:]
+        sub_tiers = sub_tiers[-last_n:]
+        sub_move = sub_move[-last_n:]
+
+    import matplotlib.dates as mdates
+    from matplotlib.patches import Patch
+
+    dates = _epoch_to_datetimes(sub["t_win"].to_numpy(dtype=float))
+
+    n_sig = len(NIGHTLY_SIGNAL_PANELS)
+    fig, axes = plt.subplots(
+        n_sig + 1,
+        1,
+        figsize=(12.0, 9.0),
+        sharex=True,
+        gridspec_kw={
+            "height_ratios": [1.3] * n_sig + [2.8],
+            "hspace": 0.28,
+        },
+    )
+    sig_axes = list(axes[:n_sig])
+    ax_score = axes[n_sig]
+
+    # --- Signal mini-panels: each signal on its own real-unit y-scale. ---
+    for ax, (col, display, unit, color) in zip(sig_axes, NIGHTLY_SIGNAL_PANELS):
+        if col in sub.columns:
+            y = pd.to_numeric(sub[col], errors="coerce").to_numpy(dtype=float)
+            ax.plot(dates, y, color=color, linewidth=1.3, marker=".", markersize=3)
+            # Baseline center as a faint reference line (your recent-nights rest).
+            b = baselines.get(col)
+            if b is not None and np.isfinite(float(b.median)):
+                ax.axhline(
+                    float(b.median), color=color, linewidth=0.8, alpha=0.35,
+                    linestyle="--",
+                )
+        ax.set_ylabel(f"{display}\n({unit})", fontsize=8)
+        ax.grid(True, linestyle=":", alpha=0.4)
+        ax.tick_params(labelsize=8)
+
+    # --- Combined score + severity-tier shading + tuned threshold lines. ---
+    # Overlay the severity tier as subtle background bands behind the score line:
+    # one muted-grey span per contiguous run of same-tier nights (darker = higher
+    # tier). This is deliberately a neutral greyscale, NOT a red/green health
+    # verdict (AC 15.2); tier 0 (None) is left unshaded (white) to keep the score
+    # and threshold lines clearly readable on top.
+    xnum = mdates.date2num([d for d in dates])
+    if len(xnum) >= 1:
+        # Half the median night spacing, used to extend band edges to each
+        # night's boundary so adjacent runs meet without gaps.
+        if len(xnum) >= 2:
+            half = float(np.median(np.diff(xnum))) / 2.0
+        else:
+            half = 0.5
+        start = 0
+        for pos in range(1, len(sub_tiers) + 1):
+            if pos == len(sub_tiers) or int(sub_tiers[pos]) != int(sub_tiers[start]):
+                tier = min(max(int(sub_tiers[start]), 0), 3)
+                if tier > 0:  # leave None unshaded for a cleaner look
+                    left = xnum[start] - half
+                    right = xnum[pos - 1] + half
+                    ax_score.axvspan(
+                        left, right,
+                        facecolor=TIER_STRIP_SHADES[tier], alpha=0.4,
+                        edgecolor="none", zorder=0,
+                    )
+                start = pos
+
+    ax_score.plot(
+        dates, sub_scores, color="#111111", linewidth=1.3,
+        marker=".", markersize=3, zorder=4,
+    )
+    threshold_lines = (
+        (float(taus.tau1), "Watch (tau1)", "#9467bd"),
+        (float(taus.tau2), "Notable (tau2)", "#ff7f0e"),
+        (float(taus.tau3), "Strong (tau3)", "#8c564b"),
+    )
+    for level, label, color in threshold_lines:
+        ax_score.axhline(level, color=color, linewidth=1.0, linestyle="--", alpha=0.9, zorder=3)
+        ax_score.text(
+            1.005, level, label,
+            transform=ax_score.get_yaxis_transform(),
+            va="center", ha="left", fontsize=7, color=color,
+        )
+    # Mark flagged nights.
+    flagged_mask = sub_tiers >= TIER_WATCH
+    if flagged_mask.any():
+        ax_score.scatter(
+            dates[flagged_mask], sub_scores[flagged_mask],
+            s=36, facecolors="none", edgecolors="#d62728", linewidths=1.2, zorder=5,
+        )
+    ax_score.set_ylabel("combined\nscore", fontsize=8)
+    ax_score.grid(True, linestyle=":", alpha=0.4)
+    ax_score.tick_params(labelsize=8)
+
+    # Annotate the highest-tier flagged nights with date + top signal (real unit).
+    flagged_idx = [i for i in range(len(sub)) if int(sub_tiers[i]) >= TIER_WATCH]
+    flagged_idx.sort(key=lambda i: (int(sub_tiers[i]), float(sub_scores[i])), reverse=True)
+    # Stagger annotation offsets so clustered flagged nights don't overprint.
+    _offsets = [(0, 26), (0, 46), (0, 14), (0, 36)]
+    for ann_i, i in enumerate(flagged_idx[:max_annotations]):
+        row = sub.iloc[i]
+        contributions = window_signed_z(row, baselines)
+        ranked = sorted(
+            contributions.items(), key=lambda kv: abs(float(kv[1])), reverse=True
+        )
+        note = tier_label(int(sub_tiers[i]))
+        if ranked:
+            top_signal = ranked[0][0]
+            disp = {"hr": "HR", "rmssd": "HRV", "skin_temp": "temp"}.get(top_signal, top_signal)
+            unit = {"hr": "bpm", "rmssd": "ms", "skin_temp": "C"}.get(top_signal, "")
+            b = baselines.get(top_signal)
+            try:
+                raw = float(row[top_signal])
+            except (KeyError, TypeError, ValueError):
+                raw = float("nan")
+            if b is not None and np.isfinite(raw) and np.isfinite(float(b.median)):
+                delta = raw - float(b.median)
+                note = f"{note}: {disp} {delta:+.1f} {unit}"
+        d = dates[i]
+        label = d.strftime("%b %d") if d is not None else ""
+        xytext = _offsets[ann_i % len(_offsets)]
+        ax_score.annotate(
+            f"{label} · {note}",
+            (dates[i], float(sub_scores[i])),
+            textcoords="offset points", xytext=xytext,
+            fontsize=6.5, ha="center", color="#333333",
+            bbox=dict(boxstyle="round,pad=0.2", fc="white", ec="#cccccc", alpha=0.85),
+            arrowprops=dict(arrowstyle="-", color="#999999", linewidth=0.6),
+        )
+
+    # --- Severity-tier legend (muted greyscale, neutral — not a health verdict).
+    # The tier itself is now drawn as background shading on this same score panel
+    # (above); only the explanatory legend lives down here, relocated from the
+    # retired strip panel. One swatch per tier, labelled with the neutral names.
+    strip_legend = [
+        Patch(facecolor=TIER_STRIP_SHADES[t], edgecolor="#bbbbbb", label=tier_label(t))
+        for t in sorted(TIER_LABELS)
+    ]
+    ax_score.legend(
+        handles=strip_legend, loc="upper center", bbox_to_anchor=(0.5, -0.22),
+        ncol=4, fontsize=7, framealpha=0.9,
+        title="severity tier shading (neutral, not a health verdict)",
+        title_fontsize=7,
+    )
+
+    # Date formatting on the shared x-axis, now anchored on the bottom-most
+    # (score) panel: one tick per month, no duplicates.
+    ax_score.xaxis.set_major_locator(mdates.MonthLocator())
+    ax_score.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m"))
+    ax_score.xaxis.set_minor_locator(mdates.WeekdayLocator(byweekday=mdates.MO))
+    for lab in ax_score.get_xticklabels():
+        lab.set_rotation(0)
+    ax_score.set_xlabel("night (date)", fontsize=9, labelpad=2)
+
+    sig_axes[0].set_title("Nightly signals (each on its own scale)", fontsize=10, loc="left")
+    ax_score.set_title(
+        "Combined deviation score with severity-tier shading and tuned thresholds",
+        fontsize=10, loc="left",
+    )
+
+    default_title = f"WHOOP nightly timeline — {person_id}"
+    if last_n is not None and len(sub):
+        default_title += f" (last {len(sub)} nights)"
+    fig.suptitle(title or default_title, fontsize=13)
+    fig.subplots_adjust(top=0.93, right=0.88, bottom=0.16)
+
+    if output_path is not None:
+        parent = os.path.dirname(os.path.abspath(output_path))
+        os.makedirs(parent, exist_ok=True)
+        fig.savefig(output_path, dpi=120, bbox_inches="tight")
+
+    return fig

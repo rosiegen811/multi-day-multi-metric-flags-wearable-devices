@@ -9,8 +9,16 @@ data/raw/*
 data/sessions/*
 !data/sessions/.gitkeep
 
+# Personal WHOOP export: never commit (keep local only)
+data/whoop/*
+!data/whoop/.gitkeep
+
 # Generated data: rebuild from simulate.py instead
 data/*.csv
+
+# WHOOP-derived outputs: personal, keep local only
+output/whoop_*.png
+output/whoop_*.csv
 
 # Python and Jupyter clutter
 __pycache__/
